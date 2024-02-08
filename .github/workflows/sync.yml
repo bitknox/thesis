@@ -26,7 +26,8 @@ jobs:
       - uses: actions/checkout@v3
 
       # Runs a single command using the runners shell
-      - name: Run a one-line script
+      - name: Fetch remote 
       - run: git pull https://jokf%40itu.dk:${{ secrets.OVERLEAF_PASSWORD}}@git.overleaf.com/65c4acb68880500c168d13cb
+      - name: Push remote
       - run: git push https://jokf%40itu.dk:${{ secrets.OVERLEAF_PASSWORD}}@git.overleaf.com/65c4acb68880500c168d13cb main:master
 
