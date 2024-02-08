@@ -24,10 +24,8 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.OVERLEAF_TOKEN }}
 
       # Runs a single command using the runners shell
       - name: Run a one-line script
-        run: ./scripts/sync.sh
+        run: git push https://jokf%40itu.dk:${{ secrets.OVERLEAF_PASSWORD}}@git.overleaf.com/65c4acb68880500c168d13cb main:master
 
