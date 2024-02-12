@@ -1,0 +1,33 @@
+
+\usepackage{graphicx} % Required for inserting images
+\usepackage{float}
+\usepackage{xspace}
+\usepackage[pdftex,linkcolor=black,pdfborder={0 0 0}]{hyperref}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[framemethod=tikz]{mdframed}
+\usepackage{minted}
+\usepackage{subcaption}
+\usepackage{mathtools}
+\usepackage[ruled,linesnumbered]{algorithm2e}
+\usepackage{algpseudocode}
+\usepackage{amssymb}
+\algnewcommand{\TRUE}{\textbf{true}}
+\algnewcommand{\FALSE}{\textbf{false}}
+\usepackage[
+backend=biber,
+style=numeric,
+sorting=none,
+natbib=true
+]{biblatex}
+\addbibresource{refs.bib}
+
+\newcommand{\raven}{Raven\xspace}
+\newcommand{\ravenjoin}{Raven Join\xspace}
+\newcommand{\beast}{Beast\xspace}
+\newcommand{\kraster}{k\textsuperscript{2}-raster\xspace}
+\newcommand{\rtree}{r*-tree\xspace}
+\newcommand{\raptorjoin}{Raptor Join\xspace}
+
+
+\newcounter{etzNOC}
+\newcommand{\eleni}[1]{\textcolor{blue}{\small  [ETZ\#\arabic{etzNOC}\stepcounter{etzNOC}: #1]}}
