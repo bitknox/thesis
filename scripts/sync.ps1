@@ -5,5 +5,8 @@ if ( $command -eq "fetch" )
     git pull overleaf master --allow-unrelated-histories --rebase=false
 } elseif (command -eq "push") {
 		git push overleaf main:master
+} else {
+	git pull overleaf master --allow-unrelated-histories --rebase=false
+	git push
 }
 
