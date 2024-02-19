@@ -2,10 +2,33 @@
 
 
 \subsection{Datastructures}
+\begin{itemize}
+    \item $K^2$-Raster
+    \item R*-Tree
+\end{itemize}
 
 \subsection{System}
 \todo[inline]{General explanation of the system as a unit}
 
 \subsubsection{Join Algorithm}
+\begin{itemize}
+    \item High level overview
+    \item checkQuadrant
+    \item checkMBR
+    \item CombineLists
+    \item extractCells
+    \item Filter functions
+    \item possibly more...
+\end{itemize}
 \subsubsection{OOCE}
-\subsubsection{}
+\begin{itemize}
+    \item Tiling approach
+    \item Streaming of matrices
+    \item Only looks at vector shapes that might overlap with the tile
+    \item translating vector coordinates to tiles
+\end{itemize}
+\subsubsection{Distribution}
+\begin{itemize}
+    \item Spark
+    \item Heuristic for splitting the work evenly
+\end{itemize}
