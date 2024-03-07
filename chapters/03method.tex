@@ -13,13 +13,30 @@
 \subsubsection{Join Algorithm}
 \begin{itemize}
     \item High level overview
+    \item Filter functions
     \item checkQuadrant
     \item checkMBR
     \item CombineLists
     \item extractCells
-    \item Filter functions
     \item possibly more...
 \end{itemize}
+\paragraph{Filter functions} \mbox{} \\ % disgusting
+One of the main differences between Raven and Beast is that Raven has greater support for joins that filter the result based on pixel-values. In Raven, the filter is pushed down as far as possible, making it able to disregard pixels that will be filtered away. In Beast, no such functionality exists, this means that the only way to apply a filter on the join is to first compute the full join, then filter the result.
+
+Raven supports filter functions that can compute whether a given range of values contain (1) any values that should be accepted by the filter, and (2) any values that should not be accepted by the filter. Any filter-function should therefore implement 2 methods, one for each of these checks.
+
+The most simple filter is one that accepts anything. This is the only type that Beast can support without any post-processing. In Raven, this is done by implementing a filter that always returns true for (1) and false for (2).
+
+The next simplest useful filter is one that can select values within a certain range. That is, the filter should have 2 values $lo$ and $hi$, and for any value $x$ should match $x$ if and only if $lo \leq x \leq hi$. This can be done by implementing a filter that for a queried interval $[x_1,x_2]$ returns $x_1 \leq hi \wedge lo \leq x_2$ for check (1) and $x_1 < lo \vee x_2 > hi$ for (2).
+
+In \todo[inline]{Reference}, which is the paper our system is based on, only filters of the second kind are supported. This more abstract way of implementing these filters allows us to have more control over which values should be accepted. For example, without changing anything other than which filter object is used, we could easily accept values that fall within one of 2 or more given ranges, by simply composing multiple of these filters with or operations. If many ranges are needed to match all the values we want, an interval tree can be used to give a query time of $O(log(n))$, where $n$ is the number of ranges. \todo[inline]{maybe $O(1)$ is possible, if the pixel-values are small enough.}
+
+Another potentially useful filter is one that matches pixels based on multiple samples from the raster-data. This could be used to match only those pixels that have a red-value in a certain range, a green-value in another range, and a blue-value in a third range. It is possible to implement this using our abstract filter functions, but the time taking to join ends up being the same as doing a simpler range filter and the post-processing the result in most cases.
+
+\todo[inline]{maybe we can modify the K2-raster slightly to allow filters of the last type to be faster than currently possible}
+
+
+
 \subsubsection{OOCE}
 \begin{itemize}
     \item Tiling approach
