@@ -1,5 +1,53 @@
 \section{Evaluation}
 \subsection{Workload}
+\subsubsection{Real world data}
+\begin{itemize}
+    \item GLC 2000 RASTER (600mb)
+    \item Small Woody Features 2018 (14gb)
+    \item Treecover RASTER (700gb) Potentially a subset here depending on disk space / join time
+    \item Boundaries Vector (10mb)
+    \item Protected Areas Vector (EU) (600mb)
+    \item Wildfires (2mb)
+\end{itemize}
+\subsubsection{Synthetic data}
+\paragraph{Raster (filering workload)}
+\begin{itemize}
+    \item Selectivity 50\%
+    \item Selectivity 25\%
+    \item Selectivity 12,5\%
+    \item Selectivity 6,25\%
+    \item Selectivity 3,125\%
+    \item Selectivity 1,562\%
+\end{itemize}
+
+\paragraph{Raster (K2 Compression)}
+\begin{itemize}
+    \item Voronoi noise (https://www.ronja-tutorials.com/post/028-voronoi-noise/)
+    \item Perlin noise (https://medium.com/@yvanscher/playing-with-perlin-noise-generating-realistic-archipelagos-b59f004d8401)
+    \item Large squares 
+\end{itemize}
+
+\paragraph{Vector (Shape density - Uniform distribution)}
+Generating random polygons as distributing them uniformly inside some bounds. Vary number of polygons / area for density.
+
+Number of points static, Irregularity static, spikiness static, avg\_radius static
+\begin{itemize}
+    \item 1000
+    \item 10000 polygons
+    \item 1000000 polygons
+    \item 10000000 polygons
+\end{itemize}
+
+
+\paragraph{Vector (Complex shapes)}
+Static number of points, 
+\begin{itemize}
+    \item Irregularity 0-1
+    \item Number of points
+\end{itemize}
+
+
+
 \subsection{Hardware}
 \subsection{Configurations}
 \subsection{Results}
