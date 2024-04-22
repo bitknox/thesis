@@ -3,7 +3,7 @@
 
 \subsection{Datastructures}
 \begin{itemize}
-    \item $K^2$-Raster
+    \item \kraster
     \item R*-Tree
 \end{itemize}
 
@@ -21,24 +21,125 @@
     \item possibly more...
 \end{itemize}
 \subsubsection*{Filter functions}
-One of the main differences between Raven and Beast is that Raven has greater support for joins that filter the result based on pixel-values. We will define a filter as a function that accepts certain pixel-values only. When a filter is applied to a join it means that the result of the join will be only the pixels that overlap with the vector data and whose value is accepted by the filter.
+One of the main differences between Raven and Beast is that Raven has greater support for joins that filter the result based on pixel-values. We will define a filter as a function that accepts certain pixel values only. When a filter is applied to a join it means that the result of the join will be only the pixels whose values are matches the predicate of the filter and overlap with the vector data.
 
-In Raven, the filter is pushed down as far as possible, making it able to disregard pixels that will be filtered away earlier. In Beast, no such functionality exists, this means that the only way to apply a filter on the join is to first compute the full join, then filter the result. 
+In Raven, the filter is pushed far down in the join algorithm, making it possible to disregard pixels that will be filtered away earlier. This is a feature of the \kraster nodes of the data structure correspond to an area given the node depth. The nodes contain a minimum and maximum value than can be checked any time in the join. In Beast, no such functionality exists, this means that the only way to apply a filter on the join is to first compute the full join, then filter the result. 
 
 The simplest useful filter is one that can select values within a certain range. That is, the filter should have 2 values $lo$ and $hi$, and for any value $x$ should match $x$ if and only if $lo \leq x \leq hi$.
 
-Another potentially useful filter is one that matches pixels based on multiple samples from the raster-data. This could be used to match only those pixels that have a red-value in a certain range, a green-value in another range, and a blue-value in a third range.
+Another potentially useful filter is one that matches pixels based on multiple samples from the raster data. This could be used to match only those pixels that have a red value in a certain range, a green value in another range, and a blue value in a third range.
 
-The pushing down of the filter is accomplished by querying the $K^2$-raster tree for the minimum and maximum pixel value in the area covered by the MBR of a given geometry or collection of geometries. If no values in this section of the $K^2$-raster tree are values accepted by the filter, the geometry in question can be thrown away without having to be processed further. 
+The pushing down of the filter is accomplished by querying the \kraster tree for the minimum and maximum pixel value in the area covered by the MBR of a given geometry or collection of geometries. If no values in this section of the \kraster tree are values accepted by the filter, the geometry in question can be thrown away without having to be processed further. 
 
-Raven supports filter functions that can compute whether a given range of values contain (1) any values that should be accepted by the filter, and (2) any values that should not be accepted by the filter. Any filter-function should therefore implement 2 methods, one for each of these checks. The reason it is done in this way is that the $K^2$-raster tree will give a range of values in the form of a min/max pair for any area queried. This type of filter can therefore be used to figure out if the geometry can be thrown away. This happens if it does not contain any pixels the filter accepts. It can also be used to determine if we can add all pixels within it to the results without having to filter each pixel. This happens when the range does not contain any values the filter will not accept.
+Raven supports filter functions that can compute whether a given range of values contain (1) any values that should be accepted by the filter, and (2) any values that should not be accepted by the filter. Any filter function should therefore implement 2 methods, one for each of these checks. The reason it is done in this way is that the \kraster tree will give a range of values in the form of a min/max pair for any area queried. This type of filter can therefore be used to figure out if the geometry can be thrown away. This happens if it does not contain any pixels the filter accepts. It can also be used to determine if we can add all pixels within it to the results without having to filter each pixel. This happens when the range does not contain any values the filter will not accept.
 
 The range filter can be implemented in Raven as a filter that for a queried interval $[x_1,x_2]$ returns $x_1 \leq hi \wedge lo \leq x_2$ for check (1) and $x_1 < lo \vee x_2 > hi$ for (2).
 
-In ...\todo{Reference}, which is the paper our system is based on, only filters of this kind are supported. Our more abstract way of implementing these filters allows us to have more control over which values should be accepted. For example, without changing anything other than which filter object is used, we could easily accept values that fall within one of 2 or more given ranges, by simply composing multiple of these filters with 'or' operations. If many ranges are needed to match all the values we want, an interval tree can be used to give a query time of $O(log(n))$, where $n$ is the number of ranges. Alternatively, if the number of bits used by the pixels is not too high, a prefix-sum-array can easily be used to filter values in constant time.
+In \citetitle{10.1371/journal.pone.0226943} by \citet{10.1371/journal.pone.0226943}, which is the paper our system is based on, only filters of this kind are supported. Our more abstract way of implementing these filters allows us to have more control over which values should be accepted. For example, without changing anything other than which filter object is used, we could easily accept values that fall within one of 2 or more given ranges, by simply composing multiple of these filters with 'or' operations. If many ranges are needed to match all the values we want, an interval tree can be used to give a query time of $O(log(n))$, where $n$ is the number of ranges. Alternatively, if the number of bits used by the pixels is not too high, a prefix-sum-array can easily be used to filter values in constant time.
 
 Applying a filter for each sample is also possible using a filter function, but the time taken to join often ends up being the same as using the simpler range filter and the post-processing the result.
 \todo[inline]{maybe we can modify the K2-raster slightly to allow filters of the last type to be faster than currently possible}
+
+\subsubsection*{extractCells}
+
+In \citetitle{10.1371/journal.pone.0226943}, the join operation described produces a list of probable results and one of definite results. They describe that in order to reduce this to one list of results a \textit{refinement step} is needed where each geometry in the probable result list is examined more closely to find all pixels within them that match the filter. This step is not described further in their paper.
+In \citetitle{LADRA2017179}, methods are provided to efficiently extract values from the \kraster tree. The most interesting one of these is the one they call \textit{searchValuesInWindow}. It takes as input, a rectangle and returns all pixels within this rectangle that matches the filter. It saves time over getting all pixel values within the window and then using the filter to discard pixels. It uses the filter during the search to avoid exploring parts of the \kraster tree that do not match the filter.
+
+Our initial approach to find all the results, was to first produce both the definite and probable results list like they mention in the paper. Both lists contain pixel-ranges that overlap with some polygon. We would then go through all pixel-ranges in the probable list and use the \textit{searchValuesInWindow} method on each row to get only the pixels that match the filter.
+
+A slight improvement to this method was made by only producing one list and performing the last step mentioned above immediately when we would have otherwise added the ranges to the probable results list. This saves time, since we can avoid an additional iteration over all results in the probable results list.
+
+We saw that this method could still be improved, since pixel ranges that lie close to each other would cause multiple calls to the \textit{searchValuesInWindow} with each call starting out identically. This is because the method in question starts at the root of the tree and recursively queries child nodes that overlap with the given window.
+
+To save time on node lookups, we came up with the idea of giving multiple ranges to a method performing similar work to \textit{searchValuesInWindow}. We call this function \textit{searchValuesInRanges}. The problem then became allowing the algorithm to quickly determine whether a certain \kraster node contains any of the given ranges. It is not feasible to go through all ranges and find out if they overlap as this would simply take too long.
+
+Instead, we came up with the idea of making multiple calls to \textit{searchValuesInRanges} where, in each call, at most one range per row is included. This allows us to use a $k$-ary tree that can be built quickly and answer queries in constant time about the horizontal span of ranges within the rows used by a given \kraster node. This span can then be used to determine whether an overlap exists with at least one of the given ranges.
+
+At each node, the tree stores the minimum and maximum x-value of the ranges present in the corresponding sub-tree. The tree is built by starting at the leaves, where each node that has a range present will be updated to the start and end x-value of that range. For every other node, the start value of it will be the minimum start value of its $k$ children, and the end value will be the maximum of their end values. A node may also have no ranges contained in it, in this case we use infinity as the start value and -infinity as the end, this way, it is not a valid range, and will not influence any of the values in its parent. An illustration of a tree can be seen in figure \ref{fig:range-tree}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/03method/range tree.pdf}
+    \caption{An illustration of how pixel-ranges are converted to a range tree. Note that only the tree for the first layer is shown. A second tree would be made for the second ranges in rows 3 and 5. The value of $k$ for this tree is 2.}
+    \label{fig:range-tree}
+\end{figure}
+
+\todo[inline]{explain tree better}
+\todo[inline]{explain layers}
+
+
+With this tree, it is still possible that a \kraster tree node falls within the span described by the $k$-ary tree without containing any ranges itself. For this to happen, however, one row would have to contain a range all the way on the left side of the raster data, and the very next row has to contain only one range at the very right of the raster data. This will also have to happen multiple times for it to slow down the algorithm significantly. Note that it can only happen if the vector data happens to lie just outside the raster tile on at least 3 sides and only intersects it on one side at a time alternating between the left and right side. We will assume that this happens rarely enough that it has no significant impact on performance.
+
+\paragraph{Analysis of worst-case performance} under the assumption that the situation mentioned does not occur.
+
+Let $n$ be the side length of the raster image, $k$ be a constant used in the \kraster tree, and $m$ be the number of ranges found by the initial step of extractCells. Let $q$ denote the average length of these ranges.
+Using the old approach, it will do $m$ runs of the search function, which will, in the worst case, have to go through all $log_k(n)$ levels. At the lowest level, they will have to enter at most $q/k$ nodes at the last level, then $q/k^2$ and so on. At each recursive call, they will have to perform approximately $k^2$ work, as they will look at all possible candidates for further recursion. The sum of work done for one initial call of the function is:
+
+\[\sum_{i=1}^{log_k(n)} q*k^2/(k^i) = k^2(n-1)q/(k-1)n \approx k*q \]
+
+Let $t_{old}$ denote the running time of the old approach in full, it is equal to the time taken by a single range multiplied by the number of ranges.
+\begin{equation}
+t_{old} \approx k*q*m
+\label{equation:old-running-time}
+\end{equation}
+
+With the new approach, we will have to make sure we don't explore parts of the matrix that don't contain any pixel-ranges. To do this, we use the $k$-ary tree explained earlier. Building this tree takes time $t_{tree}$.
+
+\begin{equation}
+t_{tree} = \sum_{i=0}^{log_k(n)} n/k^i = k(n-1)/(k-1) < 2*n
+\label{equation:tree-build-time}
+\end{equation}
+
+We do however save some time not having to go from the root of the \kraster tree for every new range. The reason for this is that even if new ranges are placed in the most malicious row possible, the method will be able to reuse some higher \kraster nodes for most of the ranges. Only the first $k^2$ ranges added to the list will take the full $k*q$ time. The next $k^2 (k^2-1)$ in the worst case will save at least one lookup each, since each of the recursive calls at the first level would be able to reuse a node. The next $k^4 (k^2-1)$ ranges will save at least two lookups. In general, the $i$'th range added will take time approximately $k*q-log_{k^2}(i) + 1$ at worst, where $log_{k^2}(i) - 1$ is a lower bound on the number of node lookups we can save.
+
+The new approach splits the calls into a number of layers. We will assume there are $l$ such layers and the $i$'th layer contains $m_i$ ranges. Then m can be computed as follows.
+\begin{equation}
+\sum_{i=0}^l (m_i) = m
+\label{equation:m-sum}
+\end{equation}
+
+If we want to consider how long adding all $m_i$ ranges for the $i$'th layer will take in the worst case, we can compute the following sum:
+\begin{equation}
+    \begin{aligned}
+        t_i = \sum_{j=1}^{m_i} k*q-log_{k^2}(j) + 1 = k*q*m_i - log_{k^2}(m_i!) + m_i \\
+        \approx k*q*m_i - m_i*log_{k^2}(m_i)
+    \end{aligned}
+\label{equation:time-range-i}
+\end{equation}
+The time taken by the new approach in full we will denote $t_{new}$. It can be expressed as the sum of all $t_i$ with an added term $l*2*n$ to account for the time taken to build the $l$ trees.
+\begin{equation}
+t_{new} = l*2*n + \sum_{i=0}^l t_i \approx l*2*n + \sum_{i=0}^l k*q*m_i - m_i*log_{k^2}(m_i)
+\label{equation:new-running-time}
+\end{equation}
+
+The worst case for our new approach is when $l=m$, this will only happen when all ranges are in a single row and is therefore very unlikely. We can see by setting $l=m$ in equation \ref{equation:new-running-time}, that even in this extreme case, we will only take time
+\[2*m*n + k*m*q\]
+This means that we will use an extra $2*m*n$ time over the old approach but this will happen very rarely, and even when it does, $m$ is likely to be very small. This is because if $l=m$ that must mean that only one of the outer rows are used. That means that a shape is mostly outside the raster data, and its outline crosses the raster bounding box $2*m$ times. For large $m$ this is very unlikely.
+
+If we instead assume that $l=1$, it follows from equations \ref{equation:new-running-time} that the new approach uses at most
+\[2*n + k*m*q - m*log_{k^2}(m)\] time. Here, the $2*n$ time is spent building the tree, and the rest is for the call to \textit{searchValuesInRanges}. In practise, $l$ will not always be 1, but it is likely to be very small.
+
+We will instead assume that $\forall i<l | m_i=m/l$, that is, the pixel-ranges are spread evenly among all layers. Then, the total time taken is approximately
+\begin{equation}
+    \begin{aligned}
+         t_{new} \approx l * (2*n + k*q*m/l - m/l*log_{k^2}(m/l)) \\
+        = 2*n*l + k*q*m - m*(log_{k^2}(m)-log_{k^2}(l))
+    \end{aligned}
+\label{equation:new-running-time-low-l}
+\end{equation}
+We can see here, that as long as $l$ is small, we don't lose significant performance over having just one layer.
+
+
+To summarise, our new approach is not asymptotically slower than the old approach under the following 2 assumptions:
+\begin{itemize}
+    \item the number of layers is likely to be small. In this case, small means bounded by a constant. This also means that a large number of ranges will not occupy only a few rows.
+    \item it is unlikely that ranges will appear only on the outside of the raster data alternating between the left and the right side for many of the rows.
+\end{itemize}
+
+The old approach has a worst-case running time of at most \[2*m*q\] as can be seen by equation \ref{equation:old-running-time}. The new approach has a worst case running time of approximately \[2*n*l + 2*m*q - m*(log_{k^2}(m)-log_{k^2}(l))\] as can be seen by equation \ref{equation:new-running-time-low-l}.
+This means that the savings in terms of running time is
+\[\Delta t \propto m*log(m) - n\]
+in the worst case, under the assumptions mentioned. There is therefore at least a theoretical advantage to using our new method, since we think these assumptions are reasonable. The practical advantage is examined in the evaluation section \todo[inline]{do this}.
 
 
 \subsection{OOCE}
@@ -47,10 +148,4 @@ Applying a filter for each sample is also possible using a filter function, but 
     \item Streaming of matrices
     \item Only looks at vector shapes that might overlap with the tile
     \item translating vector coordinates to tiles
-\end{itemize}
-\subsubsection{Distribution}
-\todo[inline]{Remove section?}
-\begin{itemize}
-    \item Spark
-    \item Heuristic for splitting the work evenly
 \end{itemize}

@@ -1,0 +1,28 @@
+@article{10.1371/journal.pone.0226943,
+    doi = {10.1371/journal.pone.0226943},
+    author = {Silva-Coira, Fernando AND Paramá, José R. AND Ladra, Susana AND López, Juan R. AND Gutiérrez, Gilberto},
+    journal = {PLOS ONE},
+    publisher = {Public Library of Science},
+    title = {Efficient processing of raster and vector data},
+    year = {2020},
+    month = {01},
+    volume = {15},
+    url = {https://doi.org/10.1371/journal.pone.0226943},
+    pages = {1-35},
+    abstract = {In this work, we propose a framework to store and manage spatial data, which includes new efficient algorithms to perform operations accepting as input a raster dataset and a vector dataset. More concretely, we present algorithms for solving a spatial join between a raster and a vector dataset imposing a restriction on the values of the cells of the raster; and an algorithm for retrieving K objects of a vector dataset that overlap cells of a raster dataset, such that the K objects are those overlapping the highest (or lowest) cell values among all objects. The raster data is stored using a compact data structure, which can directly manipulate compressed data without the need for prior decompression. This leads to better running times and lower memory consumption. In our experimental evaluation comparing our solution to other baselines, we obtain the best space/time trade-offs.},
+    number = {1},
+}
+
+@article{LADRA2017179,
+title = {Scalable and queryable compressed storage structure for raster data},
+journal = {Information Systems},
+volume = {72},
+pages = {179-204},
+year = {2017},
+issn = {0306-4379},
+doi = {https://doi.org/10.1016/j.is.2017.10.007},
+url = {https://www.sciencedirect.com/science/article/pii/S0306437916306214},
+author = {Susana Ladra and José R. Paramá and Fernando Silva-Coira},
+keywords = {Geographic information systems, Raster datasets, Data compression, Indexing, Query processing},
+abstract = {Compact data structures are storage structures that combine a compressed representation of the data and the access mechanisms for retrieving individual data without the need of decompressing from the beginning. The target is to be able to keep the data always compressed, even in main memory, given that the data can be processed directly in that form. With this approach, we obtain several benefits: we can load larger datasets in main memory, we can make a better usage of the memory hierarchy, and we can obtain bandwidth savings in a distributed computational scenario, without wasting time in compressing and decompressing data during data exchanges. In this work, we follow a compact data structure approach to design a storage structure for raster data, which is commonly used to represent attributes of the space (temperatures, pressure, elevation measures, etc.) in geographical information systems. As it is common in compact data structures, our new technique is not only able to store and directly access compressed data, but also indexes its content, thereby accelerating the execution of queries. Previous compact data structures designed to store raster data work well when the raster dataset has few different values. Nevertheless, when the number of different values in the raster increases, their space consumption and search performance degrade. Our experiments show that our storage structure improves previous approaches in all aspects, especially when the number of different values is large, which is critical when applying over real datasets. Compared with classical methods for storing rasters, namely netCDF, our method competes in space and excels in access and query times.}
+}

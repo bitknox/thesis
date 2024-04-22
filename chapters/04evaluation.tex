@@ -8,6 +8,7 @@
     \item Treecover RASTER (700gb) Potentially a subset here depending on disk space / join time
     \item Boundaries VECTOR (10mb)
     \item Protected Areas VECTOR (EU) (600mb)
+    \item Woody VECTOR (Spain) (1.6gb)
     \item Wildfires (2mb)
 \end{itemize}
 \subsubsection{Synthetic data}
@@ -29,13 +30,21 @@
     \item Large squares 
 \end{itemize}
 
+\paragraph{Raster (bit-depth)}
+\begin{itemize}
+    \item 8-bit
+    \item 16-bit
+    \item 24-bit
+\end{itemize}
+
 \paragraph{Vector (Shape density - Uniform distribution)}
 Generating random polygons as distributing them uniformly inside some bounds. Vary number of polygons / area for density.
 
 Number of points static, Irregularity static, spikiness static, avg\_radius static
 \begin{itemize}
-    \item 1000
+    \item 1000 polygons
     \item 10000 polygons
+    \item 100000 polygons
     \item 1000000 polygons
     \item 10000000 polygons
 \end{itemize}
@@ -47,7 +56,6 @@ Static number of points,
     \item Irregularity 0-1
     \item Number of points
 \end{itemize}
-
 
 
 
@@ -66,7 +74,7 @@ Server specs....
     \item All real world vector with all real world raster
     \item Selectivity with square vector covering entire area
     \item Shape density with set Raster set OR synthetic set (static)
-    \item Same as above, buth with more complex shapes.
+    \item Same as above, but with more complex shapes.
     \item Vector set covering entire area, raster varies between: Voronoi nois, Perlin noise \& Large squares. (We might want to tweak params for the noise...)
 \end{itemize}
 \subsection{Results}
