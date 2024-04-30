@@ -37,12 +37,15 @@ The range filter can be implemented in Raven as a filter that for a queried inte
 
 In \citetitle{10.1371/journal.pone.0226943} by \citet{10.1371/journal.pone.0226943}, which is the paper our system is based on, only filters of this kind are supported. Our more abstract way of implementing these filters allows us to have more control over which values should be accepted. For example, without changing anything other than which filter object is used, we could easily accept values that fall within one of 2 or more given ranges, by simply composing multiple of these filters with 'or' operations. If many ranges are needed to match all the values we want, an interval tree can be used to give a query time of $O(log(n))$, where $n$ is the number of ranges. Alternatively, if the number of bits used by the pixels is not too high, a prefix-sum-array can easily be used to filter values in constant time.
 
-Applying a filter for each sample is also possible using a filter function, but the time taken to join often ends up being the same as using the simpler range filter and the post-processing the result.
-\todo[inline]{maybe we can modify the K2-raster slightly to allow filters of the last type to be faster than currently possible}
+Applying a special filter that applies a separate filter for each sample is also possible using a filter function. The time taken to join with such a filter however often ends up being the same as using the simpler range filter and post-processing the result.
+\todo[inline]{this may no longer be true with the new result types}
+
+
+\todo[inline]{we could modify the K2-raster slightly to allow filters of the last type to be faster than currently possible}
 
 \subsubsection*{extractCells}
 
-In \citetitle{10.1371/journal.pone.0226943}, the join operation described produces a list of probable results and one of definite results. They describe that in order to reduce this to one list of results a \textit{refinement step} is needed where each geometry in the probable result list is examined more closely to find all pixels within them that match the filter. This step is not described further in their paper.
+In \citetitle{10.1371/journal.pone.0226943}, the join operation described produces a list of probable results and one of definite results. They describe that in order to reduce this to one list of results a \textit{refinement step} is needed. In this step, each geometry in the probable result list is examined more closely to find all pixels within them that match the filter. This step is not described further in their paper.
 In \citetitle{LADRA2017179}, methods are provided to efficiently extract values from the \kraster tree. The most interesting one of these is the one they call \textit{searchValuesInWindow}. It takes as input, a rectangle and returns all pixels within this rectangle that matches the filter. It saves time over getting all pixel values within the window and then using the filter to discard pixels. It uses the filter during the search to avoid exploring parts of the \kraster tree that do not match the filter.
 
 Our initial approach to find all the results, was to first produce both the definite and probable results list like they mention in the paper. Both lists contain pixel-ranges that overlap with some polygon. We would then go through all pixel-ranges in the probable list and use the \textit{searchValuesInWindow} method on each row to get only the pixels that match the filter.
@@ -53,7 +56,9 @@ We saw that this method could still be improved, since pixel ranges that lie clo
 
 To save time on node lookups, we came up with the idea of giving multiple ranges to a method performing similar work to \textit{searchValuesInWindow}. We call this function \textit{searchValuesInRanges}. The problem then became allowing the algorithm to quickly determine whether a certain \kraster node contains any of the given ranges. It is not feasible to go through all ranges and find out if they overlap as this would simply take too long.
 
-Instead, we came up with the idea of making multiple calls to \textit{searchValuesInRanges} where, in each call, at most one range per row is included. This allows us to use a $k$-ary tree that can be built quickly and answer queries in constant time about the horizontal span of ranges within the rows used by a given \kraster node. This span can then be used to determine whether an overlap exists with at least one of the given ranges.
+Instead, we came up with the idea of making multiple calls to \textit{searchValuesInRanges} where at most one range per row is included in each call. This allows us to use a $k$-ary segment tree that can be built quickly and answer queries about the horizontal span of ranges. Queries that contain only ranges within the rows used by a given \kraster node can be answered in constant time. This span can then be used to determine whether the \kraster node overlaps with at least one of the given ranges.
+
+To only give the method one range per row at most, we split the ranges into what we call \textit{layers}. The first layer contains the first pixel-range from all rows that have one. The second layer contains the second pixel-range from all rows that have at least 2 ranges, and so on. The total number of layers is therefore determined by the number of ranges in the most populated row.
 
 At each node, the tree stores the minimum and maximum x-value of the ranges present in the corresponding sub-tree. The tree is built by starting at the leaves, where each node that has a range present will be updated to the start and end x-value of that range. For every other node, the start value of it will be the minimum start value of its $k$ children, and the end value will be the maximum of their end values. A node may also have no ranges contained in it, in this case we use infinity as the start value and -infinity as the end, this way, it is not a valid range, and will not influence any of the values in its parent. An illustration of a tree can be seen in figure \ref{fig:range-tree}.
 
@@ -64,11 +69,7 @@ At each node, the tree stores the minimum and maximum x-value of the ranges pres
     \label{fig:range-tree}
 \end{figure}
 
-\todo[inline]{explain tree better}
-\todo[inline]{explain layers}
-
-
-With this tree, it is still possible that a \kraster tree node falls within the span described by the $k$-ary tree without containing any ranges itself. For this to happen, however, one row would have to contain a range all the way on the left side of the raster data, and the very next row has to contain only one range at the very right of the raster data. This will also have to happen multiple times for it to slow down the algorithm significantly. Note that it can only happen if the vector data happens to lie just outside the raster tile on at least 3 sides and only intersects it on one side at a time alternating between the left and right side. We will assume that this happens rarely enough that it has no significant impact on performance.
+With this tree, it is still possible that a \kraster tree node falls within the span described by the segment tree without containing any ranges itself. For this to happen, however, one row would have to contain a range all the way on the left side of the raster data, and the very next row has to contain only one range at the very right of the raster data. This will also have to happen multiple times for it to slow down the algorithm significantly. Note that it can only happen if the vector data happens to lie just outside the raster tile on at least 3 sides and only intersects it on one side at a time alternating between the left and right side. We will assume that this happens rarely enough that it has no significant impact on performance.
 
 \paragraph{Analysis of worst-case performance} under the assumption that the situation mentioned does not occur.
 
@@ -83,7 +84,7 @@ t_{old} \approx k*q*m
 \label{equation:old-running-time}
 \end{equation}
 
-With the new approach, we will have to make sure we don't explore parts of the matrix that don't contain any pixel-ranges. To do this, we use the $k$-ary tree explained earlier. Building this tree takes time $t_{tree}$.
+With the new approach, we will have to make sure we don't explore parts of the matrix that don't contain any pixel-ranges. To do this, we use the segment tree explained earlier. Building this tree takes time $t_{tree}$.
 
 \begin{equation}
 t_{tree} = \sum_{i=0}^{log_k(n)} n/k^i = k(n-1)/(k-1) < 2*n
@@ -112,7 +113,7 @@ t_{new} = l*2*n + \sum_{i=0}^l t_i \approx l*2*n + \sum_{i=0}^l k*q*m_i - m_i*lo
 \label{equation:new-running-time}
 \end{equation}
 
-The worst case for our new approach is when $l=m$, this will only happen when all ranges are in a single row and is therefore very unlikely. We can see by setting $l=m$ in equation \ref{equation:new-running-time}, that even in this extreme case, we will only take time
+The worst case for our new approach is when $l=m$, this will only happen when all ranges are in a single row and is therefore very unlikely. We can see by setting $l=m$ in equation \ref{equation:new-running-time} that even in this extreme case, we will only take time
 \[2*m*n + k*m*q\]
 This means that we will use an extra $2*m*n$ time over the old approach but this will happen very rarely, and even when it does, $m$ is likely to be very small. This is because if $l=m$ that must mean that only one of the outer rows are used. That means that a shape is mostly outside the raster data, and its outline crosses the raster bounding box $2*m$ times. For large $m$ this is very unlikely.
 
