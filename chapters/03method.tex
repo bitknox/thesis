@@ -4,23 +4,26 @@
 \subsection{Datastructures}
 \begin{itemize}
     \item \kraster
-    \item R*-Tree
+    \item \rtree
 \end{itemize}
+
+To query the vector data efficiently in a given area, a spatial index is used and one of the most common indices, is an r-tree. The \rtree variant improves the search time by minimizing the overlaps of nodes. The vector data is loaded in as polygons that get inserted into the \rtree, one by one. The join benefits from the small overlaps of the directorial nodes of the \rtree. More about this in the evaluation section >>>ref<<<. It is also possible to bulk load the vector data with STR >>>cite<<<, but this creates bad overlaps of the nodes. There is a way to bulk load the data where the overlaps are minimized (OMT >>>cite<<<), but we are not going to evaluate this. In many cases the vector datasets is not large enough to make the bulk loading a larger factor than node overlaps. 
 
 \subsection{System Overview}
 \todo[inline]{General explanation of the system as a unit}
 
 \subsection{Join Algorithm}
+\ravenjoin is based on an algorithm described in \citetitle{10.1371/journal.pone.0226943} by \citet{10.1371/journal.pone.0226943}. The main differences between that algorithm and \ravenjoin are
 \begin{itemize}
-    \item High level overview
-    \item Filter functions
-    \item checkQuadrant
-    \item checkMBR
-    \item CombineLists
-    \item extractCells
-    \item possibly more...
+\item we use an \rtree instead of a regular r-tree. the \rtree takes longer to build, but saves time in the join because it reduces overlap between nodes. \todo[inline]{run benchmark to ensure an \rtree is actually faster}
+\item It is mentioned in the paper that a refinement step is needed to reduce it to just one list, but not how to do this. We have implemented this refinement using \kraster search functions based on the ones described in \citetitle{LADRA2017179} by \citet{LADRA2017179}.
+\item We use a modified version of the search functions described in \citetitle{LADRA2017179}. The new version of these functions allow us to search the \kraster tree much faster.
 \end{itemize}
-\subsubsection*{Filter functions}
+
+\subsubsection{Overview}
+\ravenjoin 
+
+\subsubsection{Filter functions}
 One of the main differences between Raven and Beast is that Raven has greater support for joins that filter the result based on pixel-values. We will define a filter as a function that accepts certain pixel values only. When a filter is applied to a join it means that the result of the join will be only the pixels whose values are matches the predicate of the filter and overlap with the vector data.
 
 In Raven, the filter is pushed far down in the join algorithm, making it possible to disregard pixels that will be filtered away earlier. This is a feature of the \kraster nodes of the data structure correspond to an area given the node depth. The nodes contain a minimum and maximum value than can be checked any time in the join. In Beast, no such functionality exists, this means that the only way to apply a filter on the join is to first compute the full join, then filter the result. 
@@ -42,10 +45,10 @@ Applying a special filter that applies a separate filter for each sample is also
 
 
 \todo[inline]{we could modify the K2-raster slightly to allow filters of the last type to be faster than currently possible}
-
-\subsubsection*{extractCells}
-
-In \citetitle{10.1371/journal.pone.0226943}, the join operation described produces a list of probable results and one of definite results. They describe that in order to reduce this to one list of results a \textit{refinement step} is needed. In this step, each geometry in the probable result list is examined more closely to find all pixels within them that match the filter. This step is not described further in their paper.
+\subsubsection{Quadrant Checking}
+\subsubsection{MBR Checking}
+\subsubsection{extractCells}
+In \citetitle{10.1371/journal.pone.0226943}, the join operation described produces a list of probable results and one of definite results. They describe that in order to reduce this to one list of results, a \textit{refinement step} is needed. In this step, each geometry in the probable result list, is examined more closely to find all pixels within them that match the filter. This step is not described further in their paper.
 In \citetitle{LADRA2017179}, methods are provided to efficiently extract values from the \kraster tree. The most interesting one of these is the one they call \textit{searchValuesInWindow}. It takes as input, a rectangle and returns all pixels within this rectangle that matches the filter. It saves time over getting all pixel values within the window and then using the filter to discard pixels. It uses the filter during the search to avoid exploring parts of the \kraster tree that do not match the filter.
 
 Our initial approach to find all the results, was to first produce both the definite and probable results list like they mention in the paper. Both lists contain pixel-ranges that overlap with some polygon. We would then go through all pixel-ranges in the probable list and use the \textit{searchValuesInWindow} method on each row to get only the pixels that match the filter.
@@ -144,9 +147,17 @@ in the worst case, under the assumptions mentioned. There is therefore at least 
 
 
 \subsection{OOCE}
+
+To achieve out of core execution we partition the raster data into fixed sized squares. This means it is important that the raster data is only read in these same portions for each partition. Otherwise, nothing is saved. Since we know the bounds of the tiles, we can exclude vector data for each tile before the join. The tile size should be a power of two for the \kraster to be optimal. 
 \begin{itemize}
     \item Tiling approach
     \item Streaming of matrices
     \item Only looks at vector shapes that might overlap with the tile
     \item translating vector coordinates to tiles
 \end{itemize}
+
+\subsection{Swift (Data Generation)}
+
+\subsection{Eagle (Benchmarking)}
+
+\subsection{Visualiser}

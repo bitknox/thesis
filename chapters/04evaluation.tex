@@ -1,34 +1,90 @@
 \section{Evaluation}
 
 \subsection{Workload}
+The workloads can be split into two major categories. The real-world datasets and synthetic datasets. The real-world datasets are meant to show real-world performance, allowing us to compare the different approaches. The synthetic sets are meant to test certain aspects of the approach where we control all the parameters, to examine exactly the subsystem or area of interest.
 \subsubsection{Real world data}
-\begin{itemize}
-    \item GLC 2000 RASTER (600mb)
-    \item Small Woody Features 2018 RASTER (14gb)
-    \item Treecover RASTER (700gb) Potentially a subset here depending on disk space / join time
-    \item Boundaries VECTOR (10mb)
-    \item Protected Areas VECTOR (EU) (600mb)
-    \item Woody VECTOR (Spain) (1.6gb)
-    \item Wildfires (2mb)
-\end{itemize}
+asd
+\paragraph{Vector sets} 
+\mbox{} % :(
+\begin{table}[H]
+\begin{tabular}{|l|l|l|}
+\hline
+Dataset              & Size   & Vertices  \\ \hline
+Boundaries           & 8.39MB & 548471    \\ \hline
+Protected areas      & 534MB  & 34861822  \\ \hline
+Small Woody Features & 1.59GB & 105349748 \\ \hline
+\end{tabular}
+\caption{asd}
+\end{table}
+\paragraph{Raster sets}
+\mbox{} % :(
+\begin{table}[H]
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+Dataset              & Size   & Compression & Bit depth & Colors \\ \hline
+GLC                  & 826MB  & None        & 8         & 23     \\ \hline
+Treecover            & 534MB  & None        & 8         & 98     \\ \hline
+Small Woody Features & 6.04GB & LZW         & 8         & 3      \\ \hline
+\end{tabular}
+\caption{}
+\end{table}
 \subsubsection{Synthetic data}
 \paragraph{Raster (filering workload)}
-\begin{itemize}
-    \item Selectivity 100\%
-    \item Selectivity 50\%
-    \item Selectivity 25\%
-    \item Selectivity 12,5\%
-    \item Selectivity 6,25\%
-    \item Selectivity 3,125\%
-    \item Selectivity 1,562\%
-\end{itemize}
+Selectivity 100\%, 50\%, 25\%, 12.5\%, 6.25\%, 3.125\%, 1.562\%
+
+\begin{figure}[H]
+     \centering
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{images/04evaluation/selectivity_30.png}
+         \caption{30 \%}
+         \label{fig:y equals x}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{images/04evaluation/selectivity_75.png}
+         \caption{75\%}
+         \label{fig:three sin x}
+     \end{subfigure}
+     \hfill
+        \caption{Three simple graphs}
+        \label{fig:three graphs}
+\end{figure}
 
 \paragraph{Raster (K2 Compression)}
 \begin{itemize}
     \item Voronoi noise (https://www.ronja-tutorials.com/post/028-voronoi-noise/)
     \item Perlin noise (https://medium.com/@yvanscher/playing-with-perlin-noise-generating-realistic-archipelagos-b59f004d8401)
-    \item Large squares 
 \end{itemize}
+
+\begin{figure}[H]
+     \centering
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{images/04evaluation/voronoi16.png}
+         \caption{30 \%}
+         \label{fig:y equals x}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{images/04evaluation/voronoi64.png}
+         \caption{75\%}
+         \label{fig:three sin x}
+     \end{subfigure}
+     \hfill
+        \caption{Three simple graphs}
+        \label{fig:three graphs}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{images/04evaluation/perlin.png}
+    \caption{Caption}
+    \label{fig:enter-label}
+\end{figure}
 
 \paragraph{Raster (bit-depth)}
 \begin{itemize}
@@ -37,17 +93,16 @@
     \item 24-bit
 \end{itemize}
 
+
+\paragraph{Raster (number of colours)}
+$3^2, 3^3, ..., 3^{10}$ colours
+
+
 \paragraph{Vector (Shape density - Uniform distribution)}
 Generating random polygons as distributing them uniformly inside some bounds. Vary number of polygons / area for density.
 
 Number of points static, Irregularity static, spikiness static, avg\_radius static
-\begin{itemize}
-    \item 1000 polygons
-    \item 10000 polygons
-    \item 100000 polygons
-    \item 1000000 polygons
-    \item 10000000 polygons
-\end{itemize}
+$10^3, 10^4, ..., 10^{7}$ polygons
 
 
 \paragraph{Vector (Complex shapes)}
@@ -82,6 +137,14 @@ Server specs....
 \subsubsection{Synthetic data}
 \subsubsection{Comparison with other systems}
 \subsection{Implementation details}
+
+factors we gain performance
+\begin{itemize}
+    \item our cached compressed index.
+    \item we can return a whole pixel range as result because we know it covers a single value.
+    \item subsequent joins of compressed raster data.
+    \item No sorting step for our pixel ranges.
+\end{itemize}
 
 \subsubsection{Benchmarking framework}
 

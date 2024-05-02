@@ -20,6 +20,9 @@
 \subsection{State-of-the-art systems \& algorithms}
 
 \subsubsection{beast}
+\beast is a state of the art system that can join raster and vector data on a distributed level. It utilizes the \raptorjoin algorithm to do this. \beast contains the implementation of \raptorjoin that we are going to compare our method to.
+
+\raptorjoin is designed to do distributed raster and vector joins by pixel ranges that are contained within the vector shapes. These ranges can then be used as scan lines to read the exact pixels that are needed for the join. The join only uses the metadata to create the pixel ranges which means the raster data is not read before it is strictly necessary. ...
 
 \begin{itemize}
     \item description of Beast
@@ -32,3 +35,4 @@
     \item description of sedona
     \item description of sedona's approach to joins
 \end{itemize}
+
