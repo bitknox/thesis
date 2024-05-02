@@ -3,7 +3,7 @@
 \subsection{Workload}
 The workloads can be split into two major categories. The real-world datasets and synthetic datasets. The real-world datasets are meant to show real-world performance, allowing us to compare the different approaches. The synthetic sets are meant to test certain aspects of the approach where we control all the parameters, to examine exactly the subsystem or area of interest.
 \subsubsection{Real world data}
-asd
+The following section contains an overview of real world data we are going to use for the evaluation. There are some relevant properties included.
 \paragraph{Vector sets} 
 \mbox{} % :(
 \begin{table}[H]
@@ -29,6 +29,7 @@ Small Woody Features & 6.04GB & LZW         & 8         & 3      \\ \hline
 \caption{}
 \end{table}
 \subsubsection{Synthetic data}
+A few previews of the synthetic data for the evaluation can be seen in this section.
 \paragraph{Raster (filering workload)}
 Selectivity 100\%, 50\%, 25\%, 12.5\%, 6.25\%, 3.125\%, 1.562\%
 
@@ -48,14 +49,14 @@ Selectivity 100\%, 50\%, 25\%, 12.5\%, 6.25\%, 3.125\%, 1.562\%
          \label{fig:three sin x}
      \end{subfigure}
      \hfill
-        \caption{Three simple graphs}
+        \caption{Comparison of different selectivity for Perlin noise.}
         \label{fig:three graphs}
 \end{figure}
 
 \paragraph{Raster (K2 Compression)}
 \begin{itemize}
-    \item Voronoi noise (https://www.ronja-tutorials.com/post/028-voronoi-noise/)
-    \item Perlin noise (https://medium.com/@yvanscher/playing-with-perlin-noise-generating-realistic-archipelagos-b59f004d8401)
+    \item For Voronoi noise, we vary the number of tiles. For each of the tiles, we arrange them, such that each neighboring tile has a different colour. We vary the number of tiles between $2^2, 2^3, ... ,2^8$. An example of two of these tiles can be found in figure \ref{fig:voronoi_example}, where figure \ref{fig:voronoi_16} has 16 tiles and \ref{fig:voronoi_64} has 64 tiles.
+    \item Perlin noise. To make our synthetic data resemble real-world data, we utilize Perlin noise to generate the \textit{base} landscape. We then map this landscape to a desired amount of different colors to be used in both bit-depth testing and colour testing. An example of the type of landscapes we generate can be found in figure \ref{fig:perlin_example}.
 \end{itemize}
 
 \begin{figure}[H]
@@ -63,19 +64,19 @@ Selectivity 100\%, 50\%, 25\%, 12.5\%, 6.25\%, 3.125\%, 1.562\%
      \begin{subfigure}[b]{0.45\textwidth}
          \centering
          \includegraphics[width=\textwidth]{images/04evaluation/voronoi16.png}
-         \caption{30 \%}
-         \label{fig:y equals x}
+         \caption{16 tiles}
+         \label{fig:voronoi_16}
      \end{subfigure}
      \hfill
      \begin{subfigure}[b]{0.45\textwidth}
          \centering
          \includegraphics[width=\textwidth]{images/04evaluation/voronoi64.png}
-         \caption{75\%}
-         \label{fig:three sin x}
+         \caption{64 tiles}
+         \label{fig:voronoi_64}
      \end{subfigure}
      \hfill
-        \caption{Three simple graphs}
-        \label{fig:three graphs}
+        \caption{Comparison of different amounts of tiles for Voronoi noise.}
+        \label{fig:voronoi_example}
 \end{figure}
 
 
@@ -83,7 +84,7 @@ Selectivity 100\%, 50\%, 25\%, 12.5\%, 6.25\%, 3.125\%, 1.562\%
     \centering
     \includegraphics[width=0.6\textwidth]{images/04evaluation/perlin.png}
     \caption{Caption}
-    \label{fig:enter-label}
+    \label{fig:perlin_example}
 \end{figure}
 
 \paragraph{Raster (bit-depth)}
@@ -147,9 +148,9 @@ factors we gain performance
 \end{itemize}
 
 \subsubsection{Benchmarking framework}
+\todo[inline]{Describe how benchmarking framework works}
 
 \subsubsection{Runners}
-
-\paragraph{Beast runner}
+\todo[inline]{Mention why beast is not here }
 \paragraph{Raptor runner}
 \paragraph{Raven runner}
