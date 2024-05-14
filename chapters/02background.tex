@@ -5,10 +5,15 @@
     \item what is raster data
 \end{itemize}
 
+Raster data is data in grids of given dimensions where each cell or pixel holds a value. Typically this is a 2D grid of values and in the context of geographical data, this represents an area of the earth. The raster data can be referenced as an image of rows and columns and size of the image is how many rows and columns there are. For simplicity, the size is a width and a height.
+To map the raster data to the face of the earth, metadata is added with transformation and projection information. In combination it is possible to tell what area the whole raster data covers. Given the resolution and the area, the discrete cells have certain lengths of meters. 
+
 \subsection{Vector data}
 \begin{itemize}
     \item what is vector data
 \end{itemize}
+
+Vector data in the context of GIS refers to a collection of points and edges that form polygons. The points are often expressed as simple x and y coordinates. The edges are straight lines between the points.
 
 \subsection{Spatial joins}
 \begin{itemize}
@@ -16,6 +21,8 @@
     \item what is a raster-vector joins
     \item why do we need raster-vector joins
 \end{itemize}
+
+To join raster and vector data, it is important to convert one of the two, to the other's projection, such that the coordinates match. Since it is cumbersome to reproject raster data, we only convert the vector data to the coordinate system of the raster data. This comes with the assumption that the edges of the vector data are not very different in comparison of the two projections.
 
 \subsection{State-of-the-art systems \& algorithms}
 
@@ -31,7 +38,8 @@
 
 \subsubsection{sedona}
 
-Apache Sedona is a large-scale spatial data system that operates on a distributed level. 
+Another popular system that can perform raster and vector joins is Apache Sedona. This feature was added recently, but they do not explicitly write how they perform spatial joins. Sedona operates on a distributed level. Ideally we would have liked to do a comparison with Sedona, but since it is a Spark application, it is hard to compare it to our system. 
+
 
 \begin{itemize}
     \item description of sedona

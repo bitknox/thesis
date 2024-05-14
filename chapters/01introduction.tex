@@ -3,4 +3,23 @@
 \begin{itemize}
     \item this is a continuation of our research project
     \item mention the major improvements over the Raven from our research project 
+    \item mention the components of the system (overview)
 \end{itemize}
+
+Since the search performance of the r-tree is impacting the join time, we want to provide a metric of how efficient the search is. The search time is mostly affected by how the directorial nodes overlap each other. To compare how these overlaps differ between different r-trees, an overlap ratio is calculated using the definition from  \citet{abdullahalmamun2022airtree}. If the ratio is 1.0, it means the query only traversed leaf nodes that had matches of entries. In table \ref{tab:overlap_ratio} there are overlap ratios for the STR, r*- and r-tree where the queried areas are the bounds of the individual "treecover" images.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|}\hline  
+         &  STR&  \rtree& r-tree
+\\ \hline  
+         Boundaries&  41.01\% &  49.27\% & 36.84\%
+\\ \hline  
+         Proteccted Areas&  26.68\%&  40.11\% & 25.82\%
+\\ \hline  
+         Woody&  25.05\%&  27.48\%& 25.24\%
+\\ \hline 
+    \end{tabular}
+    \caption{Overlap ratio for different types of r-trees with 3 different vector data sets. The minimum and maximum sub nodes for the r-tree nodes are 2 and 8 respectively.}
+    \label{tab:overlap_ratio}
+\end{table}

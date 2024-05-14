@@ -1,4 +1,4 @@
-\section{Method}
+\section{Raven }
 
 
 \subsection{Datastructures}
@@ -7,23 +7,31 @@
     \item \rtree
 \end{itemize}
 
-To query the vector data efficiently in a given area, a spatial index is used and one of the most common indices, is an r-tree. The \rtree variant improves the search time by minimizing the overlaps of nodes. The vector data is loaded in as polygons that get inserted into the \rtree, one by one. The join benefits from the small overlaps of the directorial nodes of the \rtree. More about this in the evaluation section >>>ref<<<. It is also possible to bulk load the vector data with STR >>>cite<<<, but this creates bad overlaps of the nodes. There is a way to bulk load the data where the overlaps are minimized (OMT >>>cite<<<), but we are not going to evaluate this. In many cases the vector datasets is not large enough to make the bulk loading a larger factor than node overlaps. 
+To query the vector data efficiently in a given area, a spatial index is used and one of the most common indices, is an r-tree. The \rtree variant improves the search time of the tree by minimizing the overlaps of the nodes. The vector data is loaded in as polygons that get inserted into the \rtree, one by one. It is also possible to bulk load the vector data with Sort Tile Recursive\cite{582015} (STR) and Overlap Minimizing Top-down\cite{DBLP:conf/caise/LeeL03} (OMT), which is beneficial for large vector datasets. We are going use a library that can do STR bulk loading and create the \rtree variant. Ideally, we would do STR loading with r-star nodes, but this was not available.
 
-\subsection{System Overview}
-\todo[inline]{General explanation of the system as a unit}
+r-tree overlap values:
+
 
 \subsection{Join Algorithm}
 \ravenjoin is based on an algorithm described in \citetitle{10.1371/journal.pone.0226943} by \citet{10.1371/journal.pone.0226943}. The main differences between that algorithm and \ravenjoin are
 \begin{itemize}
-\item we use an \rtree instead of a regular r-tree. the \rtree takes longer to build, but saves time in the join because it reduces overlap between nodes. \todo[inline]{run benchmark to ensure an \rtree is actually faster}
+\item To make the approach work in practice we added the ability to split up images into smaller tiles each with its own \rtree and \kraster tree.
+\item For the joins, we use an \rtree instead of a regular r-tree. The \rtree takes longer to build, but saves time in the join because it reduces overlap between nodes. \todo[inline]{run benchmark to ensure an \rtree is actually faster}
 \item It is mentioned in the paper that a refinement step is needed to reduce it to just one list, but not how to do this. We have implemented this refinement using \kraster search functions based on the ones described in \citetitle{LADRA2017179} by \citet{LADRA2017179}.
 \item We use a modified version of the search functions described in \citetitle{LADRA2017179}. The new version of these functions allow us to search the \kraster tree much faster.
+\item more powerful filter functionality in the join algorithm
 \end{itemize}
 
 \subsubsection{Overview}
-\ravenjoin 
+\ravenjoin is a raster-vector spatial join algorithm. It has support for filtering based on raster values faster than conventional join algorithms that first generate all results and then filter them. The initial step of \ravenjoin is to build the required data structures. The first data structure we build is an STR bulk-loaded r-tree. We use this tree to determine what vector data overlaps with a given tile of raster data. To make this work, we have to convert the rectangle describing the area of the given raster tile from the raster data CRS to that of the vector data. This means it can load and index the raster data as needed. The indices that get created will get stored to disk such that the consecutive joins of the same area, it will load the indices instead. 
 
-\subsubsection{Filter functions}
+Next, an \rtree is created for every tile, containing the vector data that overlaps with it. Each tile of raster data is converted to a \kraster tree and it is passed to the join algorithm along with its corresponding \rtree.
+
+The join algorithm itself processes all nodes in the \rtree following a depth first traversal. When processing a node, the algorithm does a simple fast check where it finds the smallest \kraster node that fully contains the \rtree node. It can then examine the minimum and maximum values within that \kraster node. If no values within that range match the filter it can simply ignore the \rtree node. If all values within the range match the filter, it can find the pixels that overlap with the geometries and add all these to a result list.
+
+If some values of the range match the filter and some don't, the algorithm has to perform a slower, but similar, check on the MBR of the node instead. If wither all or no values within the MBR fall within the filter given to it, it will do the same thing as with the node check. This time, if only some values in the range match the filter, it will use a method called \textit{search values in ranges} to find only the pixels that do match the filter.
+
+\subsubsection{Filtering}
 One of the main differences between Raven and Beast is that Raven has greater support for joins that filter the result based on pixel-values. We will define a filter as a function that accepts certain pixel values only. When a filter is applied to a join it means that the result of the join will be only the pixels whose values are matches the predicate of the filter and overlap with the vector data.
 
 In Raven, the filter is pushed far down in the join algorithm, making it possible to disregard pixels that will be filtered away earlier. This is a feature of the \kraster nodes of the data structure correspond to an area given the node depth. The nodes contain a minimum and maximum value than can be checked any time in the join. In Beast, no such functionality exists, this means that the only way to apply a filter on the join is to first compute the full join, then filter the result. 
@@ -40,13 +48,14 @@ The range filter can be implemented in Raven as a filter that for a queried inte
 
 In \citetitle{10.1371/journal.pone.0226943} by \citet{10.1371/journal.pone.0226943}, which is the paper our system is based on, only filters of this kind are supported. Our more abstract way of implementing these filters allows us to have more control over which values should be accepted. For example, without changing anything other than which filter object is used, we could easily accept values that fall within one of 2 or more given ranges, by simply composing multiple of these filters with 'or' operations. If many ranges are needed to match all the values we want, an interval tree can be used to give a query time of $O(log(n))$, where $n$ is the number of ranges. Alternatively, if the number of bits used by the pixels is not too high, a prefix-sum-array can easily be used to filter values in constant time.
 
-Applying a special filter that applies a separate filter for each sample is also possible using a filter function. The time taken to join with such a filter however often ends up being the same as using the simpler range filter and post-processing the result.
-\todo[inline]{this may no longer be true with the new result types}
+Applying a special filter that applies a separate filter for each sample is also possible using a filter function. This can save time over the more naive approach of filtering based on a range that encompasses all the wanted values and then manually filtering the results afterwards. The reason it is faster is not that it saves time on lookups in the \kraster tree, but rather that it produces fewer results initially and avoids the final iteration over the results to further filter them.
 
-
-\todo[inline]{we could modify the K2-raster slightly to allow filters of the last type to be faster than currently possible}
 \subsubsection{Quadrant Checking}
+This is the fast initially check the join algorithm performs for the nodes in the \rtree. It works by starting at the root node of the \kraster tree and finding the child that contains the given geometry. If none of the children contain it that means that the node currently being examined is the smallest node that does, so it is returned.
+
 \subsubsection{MBR Checking}
+This is a slower version of the previous method. The goal of this method is to find the minimum and maximum raster values stored in the part of the \kraster tree that overlaps with the given geometry. We are therefore interested in finding all \kraster nodes that are contained within the given geometry. This is done by a search of the \kraster tree resembling a depth first search. The maximum value stored within the pixels that overlap with the geometries can be found by taking the maximum of the maximum values of all \kraster nodes contained within the geometry. The minimum can be found in a similar way. 
+
 \subsubsection{extractCells}
 In \citetitle{10.1371/journal.pone.0226943}, the join operation described produces a list of probable results and one of definite results. They describe that in order to reduce this to one list of results, a \textit{refinement step} is needed. In this step, each geometry in the probable result list, is examined more closely to find all pixels within them that match the filter. This step is not described further in their paper.
 In \citetitle{LADRA2017179}, methods are provided to efficiently extract values from the \kraster tree. The most interesting one of these is the one they call \textit{searchValuesInWindow}. It takes as input, a rectangle and returns all pixels within this rectangle that matches the filter. It saves time over getting all pixel values within the window and then using the filter to discard pixels. It uses the filter during the search to avoid exploring parts of the \kraster tree that do not match the filter.
@@ -143,12 +152,12 @@ To summarise, our new approach is not asymptotically slower than the old approac
 The old approach has a worst-case running time of at most \[2*m*q\] as can be seen by equation \ref{equation:old-running-time}. The new approach has a worst case running time of approximately \[2*n*l + 2*m*q - m*(log_{k^2}(m)-log_{k^2}(l))\] as can be seen by equation \ref{equation:new-running-time-low-l}.
 This means that the savings in terms of running time is
 \[\Delta t \propto m*log(m) - n\]
-in the worst case, under the assumptions mentioned. There is therefore at least a theoretical advantage to using our new method, since we think these assumptions are reasonable. The practical advantage is examined in the evaluation section \todo[inline]{do this}.
+in the worst case, under the assumptions mentioned. There is therefore at least a theoretical advantage to using our new method, since we think these assumptions are reasonable. The practical advantage is examined in the evaluation section \todo[inline]{add comparison between old methods and new methods for searching \kraster}.
 
 
 \subsection{OOCE}
 
-To achieve out of core execution we partition the raster data into fixed sized squares. This means it is important that the raster data is only read in these same portions for each partition. Otherwise, nothing is saved. Since we know the bounds of the tiles, we can exclude vector data for each tile before the join. The tile size should be a power of two for the \kraster to be optimal. 
+To achieve out of core execution we partition the raster data into fixed sized squares. We can then process one square at a time without having the rest of them loaded in memory. This means it is important that the raster data is only read in these same portions for each partition. Since we know the bounds of the tiles, we can exclude vector data for each tile before the join. For any given values of $k$ in the \kraster, the optimal tile size will be a power of $k$. 
 \begin{itemize}
     \item Tiling approach
     \item Streaming of matrices
@@ -156,11 +165,5 @@ To achieve out of core execution we partition the raster data into fixed sized s
     \item translating vector coordinates to tiles
 \end{itemize}
 
-\subsection{Swift (Data Generation)}
 
-\subsubsection{Raster Data}
 
-\subsubsection{Vector Data}
-\subsection{Eagle (Benchmarking)}
-
-\subsection{Visualiser}

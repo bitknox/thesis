@@ -1,0 +1,158 @@
+\section{Evaluation}
+In this section we are going to evaluate Raven and compare it to \beast's implementation of \raptorjoin. We will time the systems end to end of the joins which means the data load and the join itself are timed all together.
+\subsection{Workload}
+The workloads can be split into two major categories. The real-world datasets and synthetic datasets. The real-world datasets are meant to show real-world performance, allowing us to compare the different approaches. The synthetic sets are meant to test certain aspects of the approach where we control all the parameters, to examine exactly the subsystem or area of interest.
+\subsubsection{Real world data}
+The following section contains an overview of real world data we are going to use for the evaluation. There are some relevant properties included.
+\paragraph{Vector sets} 
+\mbox{} % :(
+\begin{table}[H]
+\begin{tabular}{|l|l|l|}
+\hline
+Dataset              & Size   & Vertices  \\ \hline
+Boundaries           & 8.39MB & 548471    \\ \hline
+Protected areas      & 534MB  & 34861822  \\ \hline
+Small Woody Features & 1.59GB & 105349748 \\ \hline
+\end{tabular}
+\caption{The vector sets used along with size and number of vertices.}
+\end{table}
+We have selected three vector sets with varying sizes. Since our system only supports ESRI shapefiles\footnote{\todo[inline]{link}}, the hard limit on filesize is 2GB. The sets are meant to show how we scale with the vector set size. The first the \textit{Boundaries} is a small vector set, but in terms of area, it covers the entire world. \textit{Protected areas} covers Europe, but has a lot more points to cover a smaller area. The final set \textit{Small Woody Features}. This set once again increases in size but covers a smaller area. This set only covers a subset of Spain.
+
+
+\paragraph{Raster sets}
+\mbox{} % :(
+\begin{table}[H]
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+Dataset              & Size   & Compression & Bit depth & Colors \\ \hline
+GLC                  & 826MB  & None        & 8         & 23     \\ \hline
+Treecover            & 534MB  & None        & 8         & 98     \\ \hline
+Small Woody Features & 6.04GB & LZW         & 8         & 3      \\ \hline
+\end{tabular}
+\caption{The raster sets used along with size, compression, bit depth, and number of colors.}
+\end{table}
+
+The vector sets we have picked are likewise three different sizes, to see how it scales. The properties we have included in the table, are all parameters that can affect the join time for \raven. The sets that have been selected, guarantee that there is an overlap, no matter the vector set that it is joined with. \textit{GLC} covers the entire world. For treecover, we have selected a subset that covers the entirety of Europe. Finally, the \textit{Small Woody Features} set covers the same area as the equivalent vector set.
+
+\subsubsection{Synthetic data}
+This section details the synthetic datasets along with examples and purpose.
+\paragraph{Raster (filering workload)}
+Selectivity 100\%, 98,438\%, 96.875\% 93.75\%, 87.5\%, 75\%, 50\%, 25\%, 12.5\%, 6.25\%, 3.125\%, 1.562\%
+
+\begin{figure}[H]
+     \centering
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{images/06evaluation/selectivity_30.png}
+         \caption{30 \%}
+         \label{fig:y equals x}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{images/06evaluation/selectivity_75.png}
+         \caption{75\%}
+         \label{fig:three sin x}
+     \end{subfigure}
+     \hfill
+        \caption{Comparison of different selectivity for Perlin noise.}
+        \label{fig:selectivity}
+\end{figure}
+
+In figure \ref{fig:selectivity} we see examples of data used for selectivity testing. The white pixels match the percentage of selectivity. To make realistic landscapes, the base for these images is Perlin noise. The purpose of these datasets is to show how our approach improves once the selectivity percentage goes down.
+ 
+\paragraph{Raster (K2 Compression)}
+\begin{itemize}
+    \item For Voronoi noise, we vary the number of tiles. For each of the tiles, we arrange them, such that each neighboring tile has a different colour. We vary the number of tiles between $2^2, 2^3, ... ,2^8$. An example of two of these tiles can be found in figure \ref{fig:voronoi_example}, where figure \ref{fig:voronoi_16} has 16 tiles and \ref{fig:voronoi_64} has 64 tiles.
+    \item Perlin noise. To make our synthetic data resemble real-world data, we utilize Perlin noise to generate the \textit{base} landscape. We then map this landscape to a desired amount of different colors to be used in both bit-depth testing and colour testing. An example of the type of landscapes we generate can be found in figure \ref{fig:perlin_example}.
+\end{itemize}
+
+\begin{figure}[H]
+     \centering
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{images/06evaluation/voronoi16.png}
+         \caption{16 tiles}
+         \label{fig:voronoi_16}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{images/06evaluation/voronoi64.png}
+         \caption{64 tiles}
+         \label{fig:voronoi_64}
+     \end{subfigure}
+     \hfill
+        \caption{Comparison of different amounts of tiles for Voronoi noise.}
+        \label{fig:voronoi_example}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{images/06evaluation/perlin.png}
+    \caption{Example of Perlin noise with 7 different values.}
+    \label{fig:perlin_example}
+\end{figure}
+
+\paragraph{Raster (bit-depth)}
+\begin{itemize}
+    \item 8-bit
+    \item 16-bit
+    \item 24-bit
+\end{itemize}
+
+
+\paragraph{Raster (number of colours)}
+$2^1, 2^2, ..., 2^{16}$ colours with Perlin noise. 
+This is to test the effects of the number of different raster values on our result type. The \kraster can compress the image more or less given how many equal values there are next to each other. Increasing the number of colors would make it more unlikely for the image to contain any groups of pixels with the same value.
+
+\paragraph{Vector (Shape density - Uniform distribution)}
+This set is for testing how the coverage of the raster data affects join time. The set is constructed by creating 10000 random polygons and placing them on a grid. Random shapes are generated, and their size is determined by the coverage we are aiming for.
+
+
+
+\subsection{Hardware}
+Server specs....
+\todo[inline]{Fill out hardware when Eleni gets back to us}
+
+
+\subsection{Configurations}
+\begin{itemize}
+    \item All real world vector with all real world raster
+    \item Selectivity with square vector covering entire area
+    \item Shape density with set Raster set OR synthetic set (static)
+    \item Same as above, but with more complex shapes.
+    \item Vector set covering entire area, raster varies between: Voronoi noise, Perlin noise \& Large squares. (We might want to tweak params for the noise...)
+\end{itemize}
+
+The maximum and minimum number of children for \rtree nodes are fixed at 8 and 1 respectively for all benchmarks. This is because most of the time it does not make a significant performance difference for the join. It is very dataset dependent and there does not seem to be a clear pattern for the parameters influence of the join.
+\subsection{Results}
+\subsubsection{Real world data}
+
+For compressed raster data sets there is a large performance gap compared to \raptorjoin. Decompressing the data takes extra time and likewise is this time saved with the \kraster index. 
+
+\subsubsection{Synthetic data}
+
+In the selectivity results we see that selection everything performs just as good as getting no results. This is due to the fact that each pixel range can be directly added to the results once the value has been accessed from the \kraster. In this scenario there are pixel ranges that span across the whole image and there is only one pixel range per row in the image. The low selectivity gains performance as there are fewer results to be collected. At 50\% selectivity, the algorithm has to search a bit in the \kraster and at the same time there will be more pixel ranges in total.
+
+In number of colors we see a strong correlation between how much the \kraster can compress the image into nodes and how quickly we can join. With the small number of colors the join pixel ranges are spanning quite far across the raster data. It is the nature of Perlin noise that makes it possible for the \kraster to compress the raster data unlike uniform noise.
+
+
+factors we gain performance
+\begin{itemize}
+    \item our cached and compressed index.
+    \item we can return a whole pixel range as result because we know it covers a single value.
+    \item subsequent joins of compressed raster data.
+    \item No sorting step for our pixel ranges.
+\end{itemize}
+
+\subsubsection{Comparison with other systems}
+\subsection{Implementation details}
+
+
+
+\subsubsection{Runners}
+\todo[inline]{Mention why beast is not here }
+\paragraph{Raptor runner}
+\paragraph{Raven runner}
