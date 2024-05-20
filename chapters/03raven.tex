@@ -214,4 +214,4 @@ To achieve out of core execution we partition the raster data into fixed sized s
 \subsection{Caching}
 The approach of creating fixed sized partitions of the raster data allows the data structures to be cached in a replacing fashion in the sense that the cache can be created partially as needed. The logical coverage of each cache makes it easy to manage the reusability of the cache. If the data structures were created from the least required raster data for one join, it could require more work to create the uncached raster. 
 
-We only cache the \kraster while the r-tree gets rebuild given the vector data. The reason being, the vector data is 
+We only cache the \kraster while the r-tree gets rebuild given the vector data. The reason being, the vector data is w
