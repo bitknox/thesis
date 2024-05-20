@@ -1,5 +1,5 @@
-\section{Evaluation}
-In this section we are going to evaluate Raven and compare it to \beast's implementation of \raptorjoin. We will time the systems end to end of the joins which means the data load and the join itself are timed all together.
+\section{Evaluation} \label{sec:evaluation}
+In this section we are going to evaluate Raven and compare it to a version of \beast's implementation of \raptorjoin that runs outside Spark. We will time the systems end to end of the joins which means the data load and the join itself are timed all together.
 \subsection{Workload}
 The workloads can be split into two major categories. The real-world datasets and synthetic datasets. The real-world datasets are meant to show real-world performance, allowing us to compare the different approaches. The synthetic sets are meant to test certain aspects of the approach where we control all the parameters, to examine exactly the subsystem or area of interest.
 \subsubsection{Real world data}
@@ -22,17 +22,17 @@ We have selected three vector sets with varying sizes. Since our system only sup
 \paragraph{Raster sets}
 \mbox{} % :(
 \begin{table}[H]
-\begin{tabular}{|l|l|l|l|l|}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{2.5cm}|l|l|l|l|l|}
 \hline
-Dataset              & Size   & Compression & Bit depth & Colors \\ \hline
-GLC                  & 826MB  & None        & 8         & 23     \\ \hline
-Treecover            & 534MB  & None        & 8         & 98     \\ \hline
-Small Woody Features & 6.04GB & LZW         & 8         & 3      \\ \hline
+Dataset              & Size   & Compression & Bit depth & Colors  &Pixels\\ \hline
+GLC2000& 826MB  & None        & 8         & 23      &659 M\\ \hline
+Treecover            & 534MB  & None        & 8         & 98      &4.9 B\\ \hline
+Small Woody Features & 6.04GB & LZW         & 8         & 3       &443.2 B\\ \hline
 \end{tabular}
 \caption{The raster sets used along with size, compression, bit depth, and number of colors.}
 \end{table}
 
-The vector sets we have picked are likewise three different sizes, to see how it scales. The properties we have included in the table, are all parameters that can affect the join time for \raven. The sets that have been selected, guarantee that there is an overlap, no matter the vector set that it is joined with. \textit{GLC} covers the entire world. For treecover, we have selected a subset that covers the entirety of Europe. Finally, the \textit{Small Woody Features} set covers the same area as the equivalent vector set.
+The vector sets we have picked are likewise three different sizes, to see how it scales. The properties we have included in the table, are all parameters that can affect the join time for \raven. The sets that have been selected, guarantee that there is an overlap, no matter the vector set that it is joined with. \textit{GLC2000} covers the entire world. For treecover, we have selected a subset that covers the entirety of Europe. Finally, the \textit{Small Woody Features} set covers the same area as the equivalent vector set.
 
 \subsubsection{Synthetic data}
 This section details the synthetic datasets along with examples and purpose.
@@ -43,14 +43,14 @@ Selectivity 100\%, 98,438\%, 96.875\% 93.75\%, 87.5\%, 75\%, 50\%, 25\%, 12.5\%,
      \centering
      \begin{subfigure}[b]{0.45\textwidth}
          \centering
-         \includegraphics[width=\textwidth]{images/06evaluation/selectivity_30.png}
+         \includegraphics[width=\textwidth]{images/05evaluation/selectivity_30.png}
          \caption{30 \%}
          \label{fig:y equals x}
      \end{subfigure}
      \hfill
      \begin{subfigure}[b]{0.45\textwidth}
          \centering
-         \includegraphics[width=\textwidth]{images/06evaluation/selectivity_75.png}
+         \includegraphics[width=\textwidth]{images/05evaluation/selectivity_75.png}
          \caption{75\%}
          \label{fig:three sin x}
      \end{subfigure}
@@ -71,14 +71,14 @@ In figure \ref{fig:selectivity} we see examples of data used for selectivity tes
      \centering
      \begin{subfigure}[b]{0.45\textwidth}
          \centering
-         \includegraphics[width=\textwidth]{images/06evaluation/voronoi16.png}
+         \includegraphics[width=\textwidth]{images/05evaluation/voronoi16.png}
          \caption{16 tiles}
          \label{fig:voronoi_16}
      \end{subfigure}
      \hfill
      \begin{subfigure}[b]{0.45\textwidth}
          \centering
-         \includegraphics[width=\textwidth]{images/06evaluation/voronoi64.png}
+         \includegraphics[width=\textwidth]{images/05evaluation/voronoi64.png}
          \caption{64 tiles}
          \label{fig:voronoi_64}
      \end{subfigure}
@@ -90,32 +90,21 @@ In figure \ref{fig:selectivity} we see examples of data used for selectivity tes
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.6\textwidth]{images/06evaluation/perlin.png}
+    \includegraphics[width=0.6\textwidth]{images/05evaluation/perlin.png}
     \caption{Example of Perlin noise with 7 different values.}
     \label{fig:perlin_example}
 \end{figure}
 
-\paragraph{Raster (bit-depth)}
-\begin{itemize}
-    \item 8-bit
-    \item 16-bit
-    \item 24-bit
-\end{itemize}
-
-
 \paragraph{Raster (number of colours)}
-$2^1, 2^2, ..., 2^{16}$ colours with Perlin noise. 
+$2^1, 2^2, ..., 2^{13}$ colours with Perlin noise. 
 This is to test the effects of the number of different raster values on our result type. The \kraster can compress the image more or less given how many equal values there are next to each other. Increasing the number of colors would make it more unlikely for the image to contain any groups of pixels with the same value.
 
 \paragraph{Vector (Shape density - Uniform distribution)}
 This set is for testing how the coverage of the raster data affects join time. The set is constructed by creating 10000 random polygons and placing them on a grid. Random shapes are generated, and their size is determined by the coverage we are aiming for.
 
+\subsection{Setup}
 
-
-\subsection{Hardware}
-Server specs....
-\todo[inline]{Fill out hardware when Eleni gets back to us}
-
+The benchmarks are executed on a virtual machine with four cores and 16 GB of RAM. The java runtime is version 16 and it is configured to use 14 GB for all the real world datasets.
 
 \subsection{Configurations}
 \begin{itemize}
@@ -126,17 +115,22 @@ Server specs....
     \item Vector set covering entire area, raster varies between: Voronoi noise, Perlin noise \& Large squares. (We might want to tweak params for the noise...)
 \end{itemize}
 
-The maximum and minimum number of children for \rtree nodes are fixed at 8 and 1 respectively for all benchmarks. This is because most of the time it does not make a significant performance difference for the join. It is very dataset dependent and there does not seem to be a clear pattern for the parameters influence of the join.
+The maximum and minimum number of children for \rtree nodes are fixed at 8 and 1 respectively for all benchmarks. This is because most of the time it does not make a significant performance difference for the join. It is very dataset dependent and there does not seem to be a clear pattern for the parameters influence of the join. 
 \subsection{Results}
 \subsubsection{Real world data}
 
 For compressed raster data sets there is a large performance gap compared to \raptorjoin. Decompressing the data takes extra time and likewise is this time saved with the \kraster index. 
 
+
+Joining the tree cover with no filter takes longer than \raptorjoin. This is because there is little time to save creating pixel ranges for this data set and therefore the algorithm has to retrieve each pixel value from the \kraster. This has a large cost even if the vector set only has a few large polygons as seen with the boundaries and protected areas.
+
 \subsubsection{Synthetic data}
 
-In the selectivity results we see that selection everything performs just as good as getting no results. This is due to the fact that each pixel range can be directly added to the results once the value has been accessed from the \kraster. In this scenario there are pixel ranges that span across the whole image and there is only one pixel range per row in the image. The low selectivity gains performance as there are fewer results to be collected. At 50\% selectivity, the algorithm has to search a bit in the \kraster and at the same time there will be more pixel ranges in total.
+In the selectivity results, we see that selection everything performs just as good as getting no results. This is due to the fact that each pixel range can be directly added to the results once the value has been accessed from the \kraster. In this scenario, there are pixel ranges that span across the whole image and there is only one pixel range per row in the image. The low selectivity gains performance as there are fewer results to be collected. At 50\% selectivity, the algorithm has to search a bit in the \kraster and at the same time there will be more pixel ranges in total.
 
-In number of colors we see a strong correlation between how much the \kraster can compress the image into nodes and how quickly we can join. With the small number of colors the join pixel ranges are spanning quite far across the raster data. It is the nature of Perlin noise that makes it possible for the \kraster to compress the raster data unlike uniform noise.
+In number of colors, we see a strong correlation between how much the \kraster can compress the image into nodes and how quickly we can join. With the small number of colors the join pixel ranges are spanning quite far across the raster data. It is the nature of Perlin noise that makes it possible for the \kraster to compress the raster data, unlike uniform noise.
+
+The vector density ...
 
 
 factors we gain performance
@@ -148,11 +142,29 @@ factors we gain performance
 \end{itemize}
 
 \subsubsection{Comparison with other systems}
+
+\subsubsection{\kraster search comparison}
+\label{sec:k2searchcomparison}
+
+As mentioned in section \ref{sec:extract-cells}, we came up with a modification to the search methods for the \kraster tree that has better worst-case performance under certain reasonable assumptions. In this section, we will evaluate the two versions experimentally.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/05evaluation/results/Old vs New Join (Filter) .png}
+    \caption{Comparison of join time between two versions of \ravenjoin using the two versions of \textit{extractCells} described in section \ref{sec:extract-cells}. All joins in this plot use the \textit{Protected Areas} vector set.}
+    \label{fig:old-vs-new}
+\end{figure}
+
+As can be seen in figure \ref{fig:old-vs-new}, The version of \raven using our new \textit{extractCells} method performs better than the old version overall, and significantly better on the \textit{Small Woody Features} raster dataset. One possible explanation for why \textit{Small Woody Features} is such an outlier is that that raster dataset has tiles that cover very small areas. This means that each tile will overlap with few geometries and for that reason, fewer pixel-ranges next to each other.
+
 \subsection{Implementation details}
+This section covers the implementation details of the benchmarks. It will cover the benchmarking framework \textit{eagle} and the runners, that are executed by the framework.
+\subsubsection{Eagle} \label{sec:eagle}
+Eagle is a framework for easily running containerized benchmarks. Eagle takes as input a JSON file that describes the experiments to run. It then orchestrates the necessary containers, mounts datasets, and executes the specified command inside the container. Finally, it collects the output from the benchmarked program, and automatically creates plots. This of course requires a consistent format for both input and output of the programs that are being benchmarked. For this purpose, we created thin wrappers 
 
+This allows for easily configurable benchmarks, that can be run with very little oversight. All of the definitions used for benchmarking using eagle in this thesis are included in appendix \ref{app:bench}.
 
-
-\subsubsection{Runners}
-\todo[inline]{Mention why beast is not here }
-\paragraph{Raptor runner}
-\paragraph{Raven runner}
+% Describe what eagle is
+% Describe input / output
+% Describe runners
+% Describe graphing

@@ -1,0 +1,14 @@
+\section*{Appendix}
+\label{sec:appendix}
+\addcontentsline{toc}{section}{Appendix}
+\appendix
+\addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
+\makeatletter
+\addtocontents{toc}{%
+  \begingroup
+  \let\protect\l@chapter\protect\l@section
+  \let\protect\l@section\protect\l@subsection
+}
+
+\section{Benchmark definitions}
+\label{app:bench}
