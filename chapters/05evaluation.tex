@@ -303,7 +303,10 @@ As seen in figure \ref{fig:old-vs-new}, The version of \raven using our new \tex
 
 \todo[inline]{Insert rtree figure here!}
 
-There are two separate uses of the \rtree in the system. The first one is an outer tree that contains all the vector data and is queried by the raster tiles to retrieve the shapes within the tile bounds. The retrieved shapes will be added to a new inner \rtree that is used for the join algorithm. The type of \rtree is not important to the performance of the algorithm as the tree only covers the small tile which means the probability of badly overlapping tree nodes is not that high. The outer tree is much more relevant of being quickly loaded as seen in figure ... where the \str performs best in most cases. The overlaps of the \str are not be as good as the \rstar tree (see table \ref{tab:overlap_ratio}), but the loading time is more important for large vector datasets.
+
+There are two separate uses of the \rtree in the system. The first one is an outer tree that contains all the vector data and is queried by the raster tiles to retrieve the shapes within the tile bounds. The retrieved shapes will be added to a new inner \rtree that is used for the join algorithm. The type of \rtree is not important to the performance of the algorithm as the tree only covers the small tile which means the probability of badly overlapping tree nodes is not that high. The outer tree is much more relevant for the performance as seen in figure ... The overlaps of the \str are not be as good as the \rstar tree (see table \ref{tab:overlap_ratio}), which turns out to influence the query time to retrieve the tile partitions a lot. 
+
+%of being quickly loaded as seen in figure ... where the \str performs best in most cases. The overlaps of the \str are not be as good as the \rstar tree (see table \ref{tab:overlap_ratio}), but the loading time is more important for large vector datasets.
 
 \subsection{Implementation details}
 This section covers the implementation details of the benchmarks. It will cover the benchmarking framework \textit{eagle} and the runners, that are executed by the framework.

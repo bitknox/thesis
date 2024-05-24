@@ -6,14 +6,14 @@
 \end{itemize}
 
 Raster data is data in grids of given dimensions where each cell or pixel holds a value. Typically this is a 2D grid of values and in the context of geographical data, this represents an area of the earth. The raster data can be referenced as an image of rows and columns and size of the image is how many rows and columns there are. For simplicity, the size is a width and a height.
-To map the raster data to the face of the earth, metadata is added with transformation and projection information. In combination it is possible to tell what area the whole raster data covers. Given the width and height and the physical area, the discrete cells have certain lengths of meters. This is also referred to as the resolution. 
+To map the raster data to the face of the earth, metadata is added with transformation and projection information. In combination it is possible to tell what area the whole raster data covers. Given the width and height and the physical area, the discrete cells have certain lengths of meters. This is also referred to as the resolution. A relatively small resolution would be in kilometers and high resolutions are in meters. It might become obvious that if the resolution is one meter, the size of the data grows quite rapidly in proportion with the area the set covers.
 
 \subsection{Vector data}
 \begin{itemize}
     \item what is vector data
 \end{itemize}
 
-At a basic level, the vector data model is defined as points of X and Y coordinate pairs \cite{GIS-Essentials}. Each point represent a location on the earth and whole vector dataset can easily cover the whole earth with a few points. Connecting the points will form lines which can be connected to form polygons that are enclosed shapes. On the basis of polygons always being closes we can say that a horizontal line crossing through the polygon, it must intersect an even number of times. 
+At a basic level, the vector data model is defined as points of X and Y coordinate pairs \cite{GIS-Essentials}. Each point represent a location on the earth and whole vector dataset can easily cover the whole earth with a few points. This makes the vector model much smaller compared to the raster model. On the other hand, vector data cannot be used for much else than to define an area. Connecting the points will form lines which can be connected to form polygons that are enclosed shapes. On the basis of polygons always being closes we can say that a horizontal line crossing through the polygon, it must intersect an even number of times. 
 
 
 
