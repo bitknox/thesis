@@ -6,14 +6,16 @@
 \end{itemize}
 
 Raster data is data in grids of given dimensions where each cell or pixel holds a value. Typically this is a 2D grid of values and in the context of geographical data, this represents an area of the earth. The raster data can be referenced as an image of rows and columns and size of the image is how many rows and columns there are. For simplicity, the size is a width and a height.
-To map the raster data to the face of the earth, metadata is added with transformation and projection information. In combination it is possible to tell what area the whole raster data covers. Given the resolution and the area, the discrete cells have certain lengths of meters. 
+To map the raster data to the face of the earth, metadata is added with transformation and projection information. In combination it is possible to tell what area the whole raster data covers. Given the width and height and the physical area, the discrete cells have certain lengths of meters. This is also referred to as the resolution. 
 
 \subsection{Vector data}
 \begin{itemize}
     \item what is vector data
 \end{itemize}
 
-Vector data in the context of GIS refers to a collection of points and edges that form polygons. The points are often expressed as simple x and y coordinates. The edges are straight lines between the points.
+At a basic level, the vector data model is defined as points of X and Y coordinate pairs \cite{GIS-Essentials}. Each point represent a location on the earth and whole vector dataset can easily cover the whole earth with a few points. Connecting the points will form lines which can be connected to form polygons that are enclosed shapes. On the basis of polygons always being closes we can say that a horizontal line crossing through the polygon, it must intersect an even number of times. 
+
+
 
 \subsection{Spatial joins}
 \begin{itemize}
@@ -22,7 +24,7 @@ Vector data in the context of GIS refers to a collection of points and edges tha
     \item why do we need raster-vector joins
 \end{itemize}
 
-To join raster and vector data, it is important to convert one of the two, to the other's projection, such that the coordinates match. Since it is cumbersome to reproject raster data, we only convert the vector data to the coordinate system of the raster data. This comes with the assumption that the edges of the vector data are not very different in comparison of the two projections.
+To join raster and vector data, it is important to convert one of the two, to the other's projection, such that the coordinates match. The projection information attached to the data is known as Coordinate Reference System (CRS) and datasets can be using many different systems. Since it is cumbersome to reproject raster data, we only convert the vector data to the coordinate system of the raster data. This comes with the assumption that the edges of the vector data are not very different in comparison of the two projections. 
 
 \subsection{State-of-the-art systems \& algorithms}
 
@@ -46,3 +48,4 @@ Another popular system that can perform raster and vector joins is Apache Sedona
     \item description of sedona's approach to joins
 \end{itemize}
 
+\todo[inline]{Extend background}

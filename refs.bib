@@ -1,4 +1,4 @@
-@article{10.1371/journal.pone.0226943,
+@article{k2rasterjoin,
     doi = {10.1371/journal.pone.0226943},
     author = {Silva-Coira, Fernando AND Paramá, José R. AND Ladra, Susana AND López, Juan R. AND Gutiérrez, Gilberto},
     journal = {PLOS ONE},
@@ -13,7 +13,7 @@
     number = {1},
 }
 
-@article{LADRA2017179,
+@article{k2raster,
 title = {Scalable and queryable compressed storage structure for raster data},
 journal = {Information Systems},
 volume = {72},
@@ -27,7 +27,7 @@ keywords = {Geographic information systems, Raster datasets, Data compression, I
 abstract = {Compact data structures are storage structures that combine a compressed representation of the data and the access mechanisms for retrieving individual data without the need of decompressing from the beginning. The target is to be able to keep the data always compressed, even in main memory, given that the data can be processed directly in that form. With this approach, we obtain several benefits: we can load larger datasets in main memory, we can make a better usage of the memory hierarchy, and we can obtain bandwidth savings in a distributed computational scenario, without wasting time in compressing and decompressing data during data exchanges. In this work, we follow a compact data structure approach to design a storage structure for raster data, which is commonly used to represent attributes of the space (temperatures, pressure, elevation measures, etc.) in geographical information systems. As it is common in compact data structures, our new technique is not only able to store and directly access compressed data, but also indexes its content, thereby accelerating the execution of queries. Previous compact data structures designed to store raster data work well when the raster dataset has few different values. Nevertheless, when the number of different values in the raster increases, their space consumption and search performance degrade. Our experiments show that our storage structure improves previous approaches in all aspects, especially when the number of different values is large, which is critical when applying over real datasets. Compared with classical methods for storing rasters, namely netCDF, our method competes in space and excels in access and query times.}
 }
 
-@inproceedings{DBLP:conf/caise/LeeL03,
+@inproceedings{omt,
   author       = {Taewon Lee and
                   Sukho Lee},
   editor       = {Johann Eder and
@@ -46,7 +46,7 @@ abstract = {Compact data structures are storage structures that combine a compre
   bibsource    = {dblp computer science bibliography, https://dblp.org}
 }
 
-@INPROCEEDINGS{582015,
+@INPROCEEDINGS{str,
   author={Leutenegger, S.T. and Lopez, M.A. and Edgington, J.},
   booktitle={Proceedings 13th International Conference on Data Engineering}, 
   title={STR: a simple and efficient algorithm for R-tree packing}, 
@@ -57,11 +57,77 @@ abstract = {Compact data structures are storage structures that combine a compre
   keywords={Geographic Information Systems;Spatial databases;Application software;Very large scale integration;Indexing;Mathematics;Computer science;Computer applications;Computer vision;Machine vision},
   doi={10.1109/ICDE.1997.582015}}
 
-@misc{abdullahalmamun2022airtree,
+@misc{airtree,
       title={The "AI+R"-tree: An Instance-optimized R-tree}, 
       author={Abdullah-Al-Mamun and Ch. Md. Rakin Haider and Jianguo Wang and Walid G. Aref},
       year={2022},
       eprint={2207.00550},
       archivePrefix={arXiv},
       primaryClass={cs.DB}
+}
+
+@inproceedings{raptorjoin,
+author = {Singla, Samriddhi and Eldawy, Ahmed and Diao, Tina and Mukhopadhyay, Ayan and Scudiero, Elia},
+title = {The Raptor Join Operator for Processing Big Raster + Vector Data},
+year = {2021},
+isbn = {9781450386647},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3474717.3483971},
+doi = {10.1145/3474717.3483971},
+abstract = {Pre-processing spatial data for machine learning applications often includes combining different datasets into a form usable by the machine learning algorithms. Spatial data is generally available in two representations, raster and vector. The best data science and machine learning applications need to combine multiple datasets of both representations which is a data and compute intensive problem. This paper proposes a formal raster-vector join operator, Raptor Join, that can bridge the gap between raster and vector data. It is modeled as a relational join operator in Spark that can be easily combined with other operators, while also offering the advantage of in-situ processing. To implement the Raptor join operator efficiently, we propose a novel Flash index that has a low memory requirement and can process the entire operation with one data scan. We run an extensive experimental evaluation on large scale satellite data with up-to a trillion pixels, and big vector data with up-to hundreds of millions of segments and billions of points, and show that the proposed method can scale to big data with up-to three orders of magnitude performance gain over baselines.},
+booktitle = {Proceedings of the 29th International Conference on Advances in Geographic Information Systems},
+pages = {324–335},
+numpages = {12},
+keywords = {Big Data, Raster Data, Satellite Imagery, Spatial Data, Vector Data},
+location = {Beijing, China},
+series = {SIGSPATIAL '21}
+}
+
+@article{DAC,
+title = {DACs: Bringing direct access to variable-length codes},
+journal = {Information Processing \& Management},
+volume = {49},
+number = {1},
+pages = {392-404},
+year = {2013},
+issn = {0306-4573},
+doi = {https://doi.org/10.1016/j.ipm.2012.08.003},
+url = {https://www.sciencedirect.com/science/article/pii/S0306457312001094},
+author = {Nieves R. Brisaboa and Susana Ladra and Gonzalo Navarro},
+keywords = {Variable length codes, Random access},
+abstract = {We present a new variable-length encoding scheme for sequences of integers, Directly Addressable Codes (DACs), which enables direct access to any element of the encoded sequence without the need of any sampling method. Our proposal is a kind of implicit data structure that introduces synchronism in the encoded sequence without using asymptotically any extra space. We show some experiments demonstrating that the technique is not only simple, but also competitive in time and space with existing solutions in several applications, such as the representation of LCP arrays or high-order entropy-compressed sequences.}
+}
+
+@misc{Beast-impl,
+	author = {},
+	title = {Beast's implementation of Raptor on {B}itbucket --- bitbucket.org},
+	howpublished = {\url{https://bitbucket.org/bdlabucr/beast/src/master/raptor/src/main/java/edu/ucr/cs/bdlab/raptor/}},
+	year = {},
+	note = {[Accessed 21-05-2023]},
+}
+
+@inproceedings{Beast,
+author = {Eldawy, Ahmed and Hristidis, Vagelis and Ghosh, Saheli and Saeedan, Majid and Sevim, Akil and Siddique, A.B. and Singla, Samriddhi and Sivaram, Ganesh and Vu, Tin and Zhang, Yaming},
+title = {Beast: Scalable Exploratory Analytics on Spatio-Temporal Data},
+year = {2021},
+isbn = {9781450384469},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3459637.3481897},
+doi = {10.1145/3459637.3481897},
+abstract = {This paper introduces the open-source Beast system for scalable exploratory data science on big spatio-temporal data. Beast is based on well-established research and has been released to assist the research community with analyzing big spatio-temporal data. Beast provides a set of extensible components that naturally integrate with Spark to build exploratory data science pipelines. Beast can install in less than a minute on an existing Spark cluster and provides a wide array of features including loading vector and raster data represented in standard file formats, synthetic data generation for benchmarking, load-balanced spatial partitioning, data summarization, interactive visualization, and more. Beast builds on several research projects; its goal is to make all this research widely available to researchers in one integrative and coherent system.},
+booktitle = {Proceedings of the 30th ACM International Conference on Information \& Knowledge Management},
+pages = {3796–3807},
+numpages = {12},
+keywords = {exploration, geospatial data, data science, visualization, spatio-temporal data},
+location = {Virtual Event, Queensland, Australia},
+series = {CIKM '21}
+}
+
+@book{GIS-Essentials,
+    author = {Jonathan Campbell and Michael Edward Shin},
+    title = {Essentials of Geographic Information Systems},
+    publisher = {Saylor Academy},
+    year = {2012}
 }
