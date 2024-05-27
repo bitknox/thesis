@@ -13,8 +13,9 @@
 
 The \rstar \cite{rstartree} variant improves the search time of the tree by minimizing the overlaps of the nodes at the cost of longer build time. The vector data is loaded in as polygons that get inserted into the \rstar, one by one. It is also possible to bulk load the vector data with Sort Tile Recursive \cite{str} (STR) and Overlap Minimizing Top-down \cite{omt} (OMT), which is beneficial for large vector datasets. We are going use a library that can do STR bulk loading and create the \rstar variant. Ideally, we would do STR loading with r-star nodes, but this was not available with the library we use.
 
-\paragraph{r-tree overlap values} \todo[inline]{move this?}
-Since the search performance of the r-tree is impacting the join time, we want to provide a metric of how efficient the search is. The search time is mostly affected by how the directorial nodes overlap each other. To compare how these overlaps differ between different r-trees, an overlap ratio is calculated using the definition from  \citet{airtree}. If the ratio is 1.0, it means the query only traversed leaf nodes that had matches of entries. In table \ref{tab:overlap_ratio} there are overlap ratios for the STR, r*- and r-tree where the queried areas are the bounds of the individual "treecover" images.
+\todo[inline]{move this?}
+\paragraph{r-tree overlap}
+Since the search performance of the r-tree is impacting the join time, we want to provide a metric of how efficient the search is. The search time is mostly affected by how the directorial nodes overlap each other. To compare how these overlaps differ between different r-trees, an overlap ratio is calculated using the definition from  \citet{airtree}. If the ratio is 1.0, it means the query only traversed leaf nodes that had matches of entries. In table \ref{tab:overlap_ratio} there are overlap ratios for the \str, \rstar, and \rtree where the queried areas are the bounds of the individual "treecover" images.
 
 \begin{table}[H]
     \centering
@@ -39,7 +40,6 @@ Since the search performance of the r-tree is impacting the join time, we want t
 \ravenjoin is based on an algorithm described in \citetitle{k2rasterjoin} by \citet{k2rasterjoin}. The main differences between that algorithm and \ravenjoin are
 \begin{itemize}
 \item To make the approach work in practice we added the ability to split up images into smaller tiles each with its own \rstar and \kraster tree.
-\item For the joins, we use an \rstar instead of a regular r-tree. The \rstar takes longer to build, but saves time in the join because it reduces overlap between nodes. \todo[inline]{run benchmark to ensure an \rstar is actually faster}
 \item It is mentioned in the paper that a refinement step is needed to reduce it to just one list, but not how to do this. We have implemented this refinement using \kraster search functions based on the ones described in \citetitle{k2raster} by \citet{k2raster}.
 \item We use a modified version of the search functions described in \citetitle{k2raster}. The new version of these functions allow us to search the \kraster tree much faster.
 \item more powerful filter functionality in the join algorithm
@@ -52,7 +52,16 @@ Next, an \rstar is created for every tile, containing the vector data that overl
 
 The join algorithm itself processes all nodes in the \rstar following a depth first traversal. When processing a node, the algorithm does a simple fast check where it finds the smallest \kraster node that fully contains the \rstar node. It can then examine the minimum and maximum values within that \kraster node. If no values within that range match the filter it can simply ignore the \rstar node. If all values within the range match the filter, it can find the pixels that overlap with the geometries and add all these to a result list.
 
-If some values of the range match the filter and some don't, the algorithm has to perform a slower, but similar, check on the MBR of the node instead. If wither all or no values within the MBR fall within the filter given to it, it will do the same thing as with the node check. This time, if only some values in the range match the filter, it will use a method called \textit{search values in ranges} to find only the pixels that do match the filter.
+If some values of the range match the filter and some don't, the algorithm has to perform a slower, but similar, check on the MBR of the node instead. If either all or no values within the MBR fall within the filter given to it, it will do the same thing as with the node check. This time, if only some values in the range match the filter, it will use a method called \textit{search values in ranges} to find only the pixels that do match the filter.
+
+A flowchart of this central part of the algorithm can be seen in figure \ref{fig:join-flow-chart}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{images/03method/join flow chart.png}
+    \caption{A flowchart of the outer routine in the join algorithm \ravenjoin.}
+    \label{fig:join-flow-chart}
+\end{figure}
 
 \subsubsection{Filtering}
 One of the main differences between Raven and Beast is that Raven has greater support for joins that filter the result based on pixel-values. We will define a filter as a function that accepts certain pixel values only. When a filter is applied to a join it means that the result of the join will be only the pixels whose values are matches the predicate of the filter and overlap with the vector data.

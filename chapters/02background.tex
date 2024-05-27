@@ -5,7 +5,7 @@
     \item what is raster data
 \end{itemize}
 
-Raster data is data in grids of given dimensions where each cell or pixel holds a value. Typically this is a 2D grid of values and in the context of geographical data, this represents an area of the earth. The raster data can be referenced as an image of rows and columns and size of the image is how many rows and columns there are. For simplicity, the size is a width and a height.
+Raster data is data laid out in grids of given dimensions where each cell or pixel holds a value \cite{GIS-Essentials}. Typically this is a 2D grid of values and in the context of geographical data, this represents an area of the earth. The raster data can be referenced as an image of rows and columns and size of the image is how many rows and columns there are. For simplicity, the size is a width and a height.
 To map the raster data to the face of the earth, metadata is added with transformation and projection information. In combination it is possible to tell what area the whole raster data covers. Given the width and height and the physical area, the discrete cells have certain lengths of meters. This is also referred to as the resolution. A relatively small resolution would be in kilometers and high resolutions are in meters. It might become obvious that if the resolution is one meter, the size of the data grows quite rapidly in proportion with the area the set covers.
 
 \subsection{Vector data}
@@ -23,8 +23,9 @@ At a basic level, the vector data model is defined as points of X and Y coordina
     \item what is a raster-vector joins
     \item why do we need raster-vector joins
 \end{itemize}
+A spatial join can be defined to be a join based on the location of data points of spatial data. More specifically the data is joined by the distance or physical intersections. For raster and vector data, a given polygon is joined with the pixels that are overlapping with the polygon. There are of course some definitions to be aware of, regarding when to say something overlaps. For example, if a pixel is completely within the polygon or if it is just the center of the pixel.
 
-To join raster and vector data, it is important to convert one of the two, to the other's projection, such that the coordinates match. The projection information attached to the data is known as Coordinate Reference System (CRS) and datasets can be using many different systems. Since it is cumbersome to reproject raster data, we only convert the vector data to the coordinate system of the raster data. This comes with the assumption that the edges of the vector data are not very different in comparison of the two projections. 
+To join raster and vector data, it is important that the projections of the datasets to get the same coordinate system. The projection information attached to the data is known as Coordinate Reference System (CRS) and datasets can be using many different systems. This is why it would not be very inefficient to convert the whole dataset to either vector or raster. The converted dataset would be inflated in size would require reprojection for each new dataset. Since it is cumbersome to reproject raster data, we only want to convert the vector data to the coordinate system of the raster data. This is much cheaper since vector does not have as many points as raster. This comes with the assumption that the edges of the vector data are not very different in comparison of the two projections.
 
 \subsection{State-of-the-art systems \& algorithms}
 

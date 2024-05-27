@@ -1,6 +1,7 @@
 \section{Evaluation} \label{sec:evaluation}
 In this section we are going to evaluate Raven and compare it to a version of \beast's implementation of \raptorjoin that runs outside Spark. We will time the systems end to end of the joins which means the data load and the join itself are timed all together.
 \subsection{Workload}
+\label{sec:workload}
 The workloads can be split into two major categories. The real-world datasets and synthetic datasets. The real-world datasets are meant to show real-world performance, allowing us to compare the different approaches. The synthetic sets are meant to test certain aspects of the approach where we control all the parameters, to examine exactly the subsystem or area of interest.
 \subsubsection{Real world data}
 The following section contains an overview of real world data we are going to use for the evaluation. There are some relevant properties included.
@@ -26,7 +27,7 @@ We have selected three vector sets with varying sizes. Since our system only sup
 \hline
 Dataset              & Size   & Compression & Bit depth & Colors  &Pixels\\ \hline
 GLC2000              & 826MB  & None        & 8         & 23      &659 M\\ \hline
-Treecover            & 534MB  & None        & 8         & 98      &4.9 B\\ \hline
+Treecover            & 52GB  & None        & 8         & 98      &52 B\\ \hline
 Small Woody Features & 6.04GB & LZW         & 8         & 3       &443.2 B\\ \hline
 \end{tabular}
 \caption{The raster sets used along with size, compression, bit depth, and number of colors.}
@@ -95,28 +96,28 @@ In figure \ref{fig:selectivity} we see examples of data used for selectivity tes
     \label{fig:perlin_example}
 \end{figure}
 
-\paragraph{Raster (number of colours)}
-$2^1, 2^2, ..., 2^{13}$ colours with Perlin noise. 
-This is to test the effects of the number of different raster values on our result type. The \kraster can compress the image more or less given how many equal values there are next to each other. Increasing the number of colors would make it more unlikely for the image to contain any groups of pixels with the same value.
+\paragraph{Raster (number of values)}
+$2^1, 2^2, ..., 2^{13}$ values with Perlin noise. 
+This is to test the effects of the number of different raster values on our result type. The \kraster can compress the image more or less given how many equal values there are next to each other. Increasing the number of possible values, makes it more unlikely for the image to contain any groups of pixels with the same value.
 
 \begin{figure}[H]
     \centering   %
 \setkeys{Gin}{width=\linewidth}
 \begin{subfigure}{.45\textwidth}
   \includegraphics{images/05evaluation/synthetic examples/colors_8.png}
-  \caption{Perlin noise with 8 colors}
+  \caption{Perlin noise with 8 values}
   \label{fig:colors_08}
 \end{subfigure}
 \hfil
 \begin{subfigure}{.45\textwidth}
   \includegraphics{images/05evaluation/synthetic examples/colors_16.png}
-  \caption{Perlin noise with 16 colors}
+  \caption{Perlin noise with 16 values}
   \label{fig:colors_16}
 \end{subfigure}
 
 \begin{subfigure}{.45\textwidth}
   \includegraphics{images/05evaluation/synthetic examples/colors_256.png}
-  \caption{Perlin noise with 256 colors}
+  \caption{Perlin noise with 256 values}
   \label{fig:colors_256}
 \end{subfigure}%
 \caption{Examples of Perlin noise used for number of colors}
@@ -164,7 +165,24 @@ The maximum and minimum number of children for \rstar nodes are fixed at 8 and 1
 \subsection{Results}
 \subsubsection{Real world data}
 \label{sec:real-data}
+This section covers results for all the real-world datasets for both \ravenjoin and \raptorjoin. The datasets and their properties were outlined in \ref{sec:workload}. Results are shown both with filtering and without filtering, to highlight the benefits of the pushed-down filter approach. All the results for \ravenjoin are done with a cache, which means that to get these speeds, such a cache would need to be built first. Section \ref{sec:cache-building-times} covers the time it takes to build the cache.
 
+
+
+\begin{table}[H]
+\centering
+    \begin{tabular}{|l|l|l|l|}
+        \hline
+         & boundaries & protected areas & woody \\ \hline
+        read time & 57.7 ms & 14810 ms & 28700 ms \\ \hline
+        build time & 5.5 ms & 80.5 ms & 651 ms \\ \hline
+    \end{tabular}
+    \caption{The time it takes to read the vector data and build outer \rtree data structure for it.}
+    \label{tab:vector-load-times}
+\end{table}
+
+Table \ref{tab:vector-load-times} shows The time spent loading and building the outer \rtree for the 3 different vector datasets. As expected, both loading and \rtree building takes longer for the larger datasets.
+ 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.9\textwidth]{images/05evaluation/results/real world/Join Time - Boundaries (Filter) .png}
@@ -172,12 +190,16 @@ The maximum and minimum number of children for \rstar nodes are fixed at 8 and 1
     \label{fig:res-boundaries-filter}
 \end{figure}
 
+Figure \ref{fig:res-boundaries-filter} shows the results for both \ravenjoin \& \raptorjoin for the vector set Boundaries and all three raster sets. Since boundaries is a small vector set, the time it takes to build and load is negligible. We show the times in table \ref{tab:vector-load-times}. This means that for all of the above results, the time is dominated by reading raster data, doing the join operation, and collecting results. Since this is a filtered result, the main advantage is the heavily reduced amount of results that have to be created. This goes for all three datasets, although it is more heavily visible for the small dataset GLC2000, which also lends itself to result compression. The benefit of which is more visible in figure \ref{fig:res-boundaries-no-filter}, since filtering does not play a factor.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.9\textwidth]{images/05evaluation/results/real world/Join Time - Boundaries (No Filter) .png}
     \caption{Join time of Boundaries without filtering.}
     \label{fig:res-boundaries-no-filter}
 \end{figure}
+
+The results in figure \ref{fig:res-boundaries-no-filter} show the same joins as in figure \ref{fig:res-boundaries-filter}, but without a filter. For GLC2000 \raven is 95\% faster, which here it is mainly due to result compression. For Treecover, we are about equal. In this case, we are not able to benefit from a filter nor result compression, as the values in Treecover rarely allow for ranges larger than \todo[inline]{REF HISTOGRAM}. 
 
 
 \begin{figure}[H]
@@ -279,34 +301,26 @@ As mentioned in section \ref{sec:extract-cells}, we came up with a modification 
 As seen in figure \ref{fig:old-vs-new}, The version of \raven using our new \textit{extractCells} method performs better than the old version overall, and significantly better on the \textit{Small Woody Features} raster dataset. One possible explanation for why \textit{Small Woody Features} is such an outlier is that that raster dataset has tiles that cover very small areas. This means that each tile will overlap with few geometries and for that reason it will have fewer pixel-ranges next to each other horizontally.
 
 \subsubsection{Cache building times}
+\label{sec:cache-building-times}
+
+ \begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/05evaluation/results/misc/Cache Build & Write Times .png}
+    \caption{Time taken to build \& write the cache for all raster sets.}
+    \label{fig:cache-build-write}
+\end{figure}
 
 \begin{figure}[H]
-     \centering
-     \begin{subfigure}[b]{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/05evaluation/results/misc/Cache Build & Write Times .png}
-        \caption{Time taken to build \& write the cache for all raster sets.}
-        \label{fig:cache-build-write}
-    \end{subfigure}
-     \hfill
-     \begin{subfigure}[b]{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/05evaluation/results/misc/Cache Build Times .png}
-        \caption{Time taken just to build the cache for all raster sets.}
-        \label{fig:cache-build-no-write}
-    \end{subfigure}
-     \hfill
-        \caption{}
-        \label{fig:cache-build}
+    \centering
+    \includegraphics[width=\textwidth]{images/05evaluation/results/misc/Outer R-tree Type (Treecover) .png}
+    \caption{Join time as a function of the number of the area covered by the vector data. }
+    \label{fig:outer-r-tree}
 \end{figure}
-\todo[inline]{Should we remove the second one?}
 
-\todo[inline]{Insert rtree figure here!}
+There are two separate uses of the \rtree in the system. The first one is an outer tree that contains all the vector data and is queried by the raster tiles to retrieve the shapes within the tile bounds. The retrieved shapes will be added to a new inner \rtree that is used for the join algorithm. The effect of using various types of \rtree as the outer tree can be seen in figure \ref{fig:outer-r-tree}. The overlaps of the \str are not as good as the \rstar tree (see table \ref{tab:overlap_ratio}), but the building time is much faster for the \str, which more than makes up for the time lost on the worse overlap in most cases.
 
-
-There are two separate uses of the \rtree in the system. The first one is an outer tree that contains all the vector data and is queried by the raster tiles to retrieve the shapes within the tile bounds. The retrieved shapes will be added to a new inner \rtree that is used for the join algorithm. The type of \rtree is not important to the performance of the algorithm as the tree only covers the small tile which means the probability of badly overlapping tree nodes is not that high. The outer tree is much more relevant for the performance as seen in figure ... The overlaps of the \str are not be as good as the \rstar tree (see table \ref{tab:overlap_ratio}), which turns out to influence the query time to retrieve the tile partitions a lot. 
-
-%of being quickly loaded as seen in figure ... where the \str performs best in most cases. The overlaps of the \str are not be as good as the \rstar tree (see table \ref{tab:overlap_ratio}), but the loading time is more important for large vector datasets.
+The type of the inner \rtree has a smaller impact on performance. We ran multiple benchmarks and computed that the average time taken to complete all of them. The \str came out on top, being 4.5\% faster than an \rtree. The \rstar, on the other hand, performed 6.6\% worse than the \rtree. If we instead compute the average relative difference compared to an \rtree the \str performs just 0.1\% worse on average, whereas the \rstar performs 6.2\% worse.
+The plots for each run can be seen in appendix \ref{sec:inner-r-tree}.
 
 \subsection{Implementation details}
 This section covers the implementation details of the benchmarks. It will cover the benchmarking framework \textit{eagle} and the runners, that are executed by the framework.

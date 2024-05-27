@@ -1,0 +1,507 @@
+\paragraph{Boundaries with filter} \mbox{}
+\begin{lstlisting}[language=json,firstnumber=1]
+{
+  "name": "Join Time - Boundaries (Filter)",
+  "benchmarks": [
+    {
+      "name": "Raven",
+      "iterations": 5,
+      "group": ["GLC", "SWF", "Treecover"],
+      "command": {
+        "path": "java",
+        "args": [
+          "-jar",
+          "-Xmx14g",
+          "/home/runners/raven-runner-1.0.jar",
+          "-iv",
+          "/home/real/vector/boundaries/ne_10m_admin_0_countries.shp",
+          "-cl",
+          "/home/raster-cache/",
+          "-ir",
+          [
+            "/home/real/raster/glc2000",
+            "/home/real/raster/woody",
+            "/home/real/raster/treecover"
+          ],
+          "-t",
+          "parallel",
+          "-ts",
+          "2048",
+          "-fl",
+          ["22", "1", "81"],
+          "-fh",
+          ["22", "1", "84"]
+        ]
+      },
+      "environment_options": {
+        "environment_type": "docker",
+        "docker_file_path": "./runners/raven-runner/",
+        "docker_mount_path": "/home/joinpro/data"
+      }
+    },
+    {
+      "name": "Raptor",
+      "iterations": 5,
+      "group": ["GLC", "SWF", "Treecover"],
+      "command": {
+        "path": "java",
+        "args": [
+          "-jar",
+          "-Xmx14g",
+          "/home/runners/raptor-runner-1.0.jar",
+          "-iv",
+          "/home/real/vector/boundaries/ne_10m_admin_0_countries.shp",
+          "-ir",
+          [
+            "/home/real/raster/glc2000",
+            "/home/real/raster/woody",
+            "/home/real/raster/treecover"
+          ],
+          "-fl",
+          ["22", "1", "81"],
+          "-fh",
+          ["22", "1", "84"]
+        ]
+      },
+      "environment_options": {
+        "environment_type": "docker",
+        "docker_file_path": "./runners/raptor-runner/",
+        "docker_mount_path": "/home/joinpro/data"
+      }
+    }
+  ],
+  "colours": {
+    "Raven": "darkred",
+    "Raptor": "darkblue"
+  }
+}
+\end{lstlisting}
+
+\newpage
+\paragraph{Boundaries without filter} \mbox{}
+\begin{lstlisting}[language=json,firstnumber=1]
+{
+  "name": "Join Time - Boundaries (No Filter)",
+  "benchmarks": [
+    {
+      "name": "Raven",
+      "iterations": 5,
+      "group": ["GLC", "SWF", "Treecover"],
+      "command": {
+        "path": "java",
+        "args": [
+          "-jar",
+          "-Xmx14g",
+          "/home/runners/raven-runner-1.0.jar",
+          "-iv",
+          "/home/real/vector/boundaries/ne_10m_admin_0_countries.shp",
+          "-cl",
+          "/home/raster-cache/",
+          "-ir",
+          [
+            "/home/real/raster/glc2000",
+            "/home/real/raster/woody",
+            "/home/real/raster/treecover"
+          ],
+          "-t",
+          "parallel",
+          "-ts",
+          "2048"
+        ]
+      },
+      "environment_options": {
+        "environment_type": "docker",
+        "docker_file_path": "./runners/raven-runner/",
+        "docker_mount_path": "/home/joinpro/data"
+      }
+    },
+    {
+      "name": "Raptor",
+      "iterations": 5,
+      "group": ["GLC", "SWF", "Treecover"],
+      "command": {
+        "path": "java",
+        "args": [
+          "-jar",
+          "-Xmx14g",
+          "/home/runners/raptor-runner-1.0.jar",
+          "-iv",
+          "/home/real/vector/boundaries/ne_10m_admin_0_countries.shp",
+          "-ir",
+          [
+            "/home/real/raster/glc2000",
+            "/home/real/raster/woody",
+            "/home/real/raster/treecover"
+          ]
+        ]
+      },
+      "environment_options": {
+        "environment_type": "docker",
+        "docker_file_path": "./runners/raptor-runner/",
+        "docker_mount_path": "/home/joinpro/data"
+      }
+    }
+  ],
+  "colours": {
+    "Raven": "darkred",
+    "Raptor": "darkblue"
+  }
+}
+\end{lstlisting}
+
+\newpage
+\paragraph{Protected Areas with filter} \mbox{}
+\begin{lstlisting}[language=json,firstnumber=1]
+{
+  "name": "Join Time - Protected Areas (Filter)",
+  "benchmarks": [
+    {
+      "name": "Raven",
+      "iterations": 5,
+      "group": ["GLC", "SWF", "Treecover"],
+      "command": {
+        "path": "java",
+        "args": [
+          "-jar",
+          "-Xmx14g",
+          "/home/runners/raven-runner-1.0.jar",
+          "-iv",
+          "/home/real/vector/protected_areas/ProtectedArea.shp",
+          "-cl",
+          "/home/raster-cache/",
+          "-ir",
+          [
+            "/home/real/raster/glc2000",
+            "/home/real/raster/woody",
+            "/home/real/raster/treecover"
+          ],
+          "-fl",
+          ["22", "1", "81"],
+          "-fh",
+          ["22", "1", "84"],
+          "-t",
+          "parallel",
+          "-ts",
+          "2048"
+        ]
+      },
+      "environment_options": {
+        "environment_type": "docker",
+        "docker_file_path": "./runners/raven-runner/",
+        "docker_mount_path": "/home/joinpro/data"
+      }
+    },
+    {
+      "name": "Raptor",
+      "iterations": 5,
+      "group": ["GLC", "SWF", "Treecover"],
+      "command": {
+        "path": "java",
+        "args": [
+          "-jar",
+          "-Xmx14g",
+          "/home/runners/raptor-runner-1.0.jar",
+          "-iv",
+          "/home/real/vector/protected_areas/ProtectedArea.shp",
+          "-ir",
+          [
+            "/home/real/raster/glc2000",
+            "/home/real/raster/woody",
+            "/home/real/raster/treecover"
+          ],
+          "-fl",
+          ["22", "1", "81"],
+          "-fh",
+          ["22", "1", "84"]
+        ]
+      },
+      "environment_options": {
+        "environment_type": "docker",
+        "docker_file_path": "./runners/raptor-runner/",
+        "docker_mount_path": "/home/joinpro/data"
+      }
+    }
+  ],
+  "colours": {
+    "Raven": "darkred",
+    "Raptor": "darkblue"
+  }
+}
+\end{lstlisting}
+
+\newpage
+\paragraph{Protected Areas without filter} \mbox{}
+\begin{lstlisting}[language=json,firstnumber=1]
+{
+  "name": "Join Time - Protected Areas (No Filter)",
+  "benchmarks": [
+    {
+      "name": "Raven",
+      "iterations": 5,
+      "group": ["GLC", "SWF", "Treecover"],
+      "command": {
+        "path": "java",
+        "args": [
+          "-jar",
+          "-Xmx14g",
+          "/home/runners/raven-runner-1.0.jar",
+          "-iv",
+          "/home/real/vector/protected_areas/ProtectedArea.shp",
+          "-cl",
+          "/home/raster-cache/",
+          "-ir",
+          [
+            "/home/real/raster/glc2000",
+            "/home/real/raster/woody",
+            "/home/real/raster/treecover"
+          ],
+          "-t",
+          "parallel",
+          "-ts",
+          "2048"
+        ]
+      },
+      "environment_options": {
+        "environment_type": "docker",
+        "docker_file_path": "./runners/raven-runner/",
+        "docker_mount_path": "/home/joinpro/data"
+      }
+    },
+    {
+      "name": "Raptor",
+      "iterations": 5,
+      "group": ["GLC", "SWF", "Treecover"],
+      "command": {
+        "path": "java",
+        "args": [
+          "-jar",
+          "-Xmx14g",
+          "/home/runners/raptor-runner-1.0.jar",
+          "-iv",
+          "/home/real/vector/protected_areas/ProtectedArea.shp",
+          "-ir",
+          [
+            "/home/real/raster/glc2000",
+            "/home/real/raster/woody",
+            "/home/real/raster/treecover"
+          ]
+        ]
+      },
+      "environment_options": {
+        "environment_type": "docker",
+        "docker_file_path": "./runners/raptor-runner/",
+        "docker_mount_path": "/home/joinpro/data"
+      }
+    }
+  ],
+  "colours": {
+    "Raven": "darkred",
+    "Raptor": "darkblue"
+  }
+}
+\end{lstlisting}
+
+\newpage
+\paragraph{Small Woody Features with filter} \mbox{}
+\begin{lstlisting}[language=json,firstnumber=1]
+{
+  "name": "Join Time - Woody (Filter)",
+  "benchmarks": [
+    {
+      "name": "Raven",
+      "iterations": 5,
+      "group": ["GLC", "SWF", "Treecover"],
+      "command": {
+        "path": "java",
+        "args": [
+          "-jar",
+          "-Xmx14g",
+          "/home/runners/raven-runner-1.0.jar",
+          "-iv",
+          "/home/real/vector/woody/woody.shp",
+          "-cl",
+          "/home/raster-cache/",
+          "-ir",
+          [
+            "/home/real/raster/glc2000",
+            "/home/real/raster/woody",
+            "/home/real/raster/treecover"
+          ],
+          "-t",
+          "parallel",
+          "-ts",
+          "2048",
+          "-fl",
+          ["22", "1", "81"],
+          "-fh",
+          ["22", "1", "84"]
+        ]
+      },
+      "environment_options": {
+        "environment_type": "docker",
+        "docker_file_path": "./runners/raven-runner/",
+        "docker_mount_path": "/home/joinpro/data"
+      }
+    },
+    {
+      "name": "Raptor",
+      "iterations": 5,
+      "group": ["GLC", "SWF", "Treecover"],
+      "command": {
+        "path": "java",
+        "args": [
+          "-jar",
+          "-Xmx14g",
+          "/home/runners/raptor-runner-1.0.jar",
+          "-iv",
+          "/home/real/vector/woody/woody.shp",
+          "-ir",
+          [
+            "/home/real/raster/glc2000",
+            "/home/real/raster/woody",
+            "/home/real/raster/treecover"
+          ],
+          "-fl",
+          ["22", "1", "81"],
+          "-fh",
+          ["22", "1", "84"]
+        ]
+      },
+      "environment_options": {
+        "environment_type": "docker",
+        "docker_file_path": "./runners/raptor-runner/",
+        "docker_mount_path": "/home/joinpro/data"
+      }
+    }
+  ],
+  "colours": {
+    "Raven": "darkred",
+    "Raptor": "darkblue"
+  }
+}
+\end{lstlisting}
+
+\newpage
+\paragraph{Small Woody Features without filter} \mbox{}
+\begin{lstlisting}[language=json,firstnumber=1]
+{
+  "name": "Join Time - Woody (No Filter)",
+  "benchmarks": [
+    {
+      "name": "Raven",
+      "iterations": 5,
+      "group": ["GLC", "SWF", "Treecover"],
+      "command": {
+        "path": "java",
+        "args": [
+          "-jar",
+          "-Xmx14g",
+          "/home/runners/raven-runner-1.0.jar",
+          "-iv",
+          "/home/real/vector/woody/woody.shp",
+          "-cl",
+          "/home/raster-cache/",
+          "-ir",
+          [
+            "/home/real/raster/glc2000",
+            "/home/real/raster/woody",
+            "/home/real/raster/treecover"
+          ],
+          "-t",
+          "parallel",
+          "-ts",
+          "2048"
+        ]
+      },
+      "environment_options": {
+        "environment_type": "docker",
+        "docker_file_path": "./runners/raven-runner/",
+        "docker_mount_path": "/home/joinpro/data"
+      }
+    },
+    {
+      "name": "Raptor",
+      "iterations": 5,
+      "group": ["GLC", "SWF", "Treecover"],
+      "command": {
+        "path": "java",
+        "args": [
+          "-jar",
+          "-Xmx14g",
+          "/home/runners/raptor-runner-1.0.jar",
+          "-iv",
+          "/home/real/vector/woody/woody.shp",
+          "-ir",
+          [
+            "/home/real/raster/glc2000",
+            "/home/real/raster/woody",
+            "/home/real/raster/treecover"
+          ]
+        ]
+      },
+      "environment_options": {
+        "environment_type": "docker",
+        "docker_file_path": "./runners/raptor-runner/",
+        "docker_mount_path": "/home/joinpro/data"
+      }
+    }
+  ],
+  "colours": {
+    "Raven": "darkred",
+    "Raptor": "darkblue"
+  }
+}
+\end{lstlisting}
+
+\newpage
+\paragraph{Cache Build Time} \mbox{}
+\begin{lstlisting}[language=json,firstnumber=1]
+{
+  "name": "Cache Build Time",
+  "benchmarks": [
+    {
+      "name": "Raven",
+      "iterations": 3,
+      "group": [
+        "GLC2000",
+        "SWF",
+        "Treecover"
+      ],
+      "command": {
+        "path": "java",
+        "args": [
+          "-jar",
+          "-Xmx14g",
+          "/home/runners/raven-runner-1.0-BUILD-TIME.jar",
+          "-iv",
+          "/home/real/vector/boundaries/ne_10m_admin_0_countries.shp",
+          "-cl",
+          "/home/build-raster-cache/",
+          "-ir",
+          [
+            "/home/real/raster/glc2000",
+            "/home/real/raster/woody",
+            "/home/real/raster/treecover"
+          ],
+          "-t",
+          "parallel",
+          "-c",
+          "false",
+          "-ts",
+          "2048"
+        ]
+      },
+      "environment_options": {
+        "environment_type": "docker",
+        "docker_file_path": "./runners/raven-runner/",
+        "docker_mount_path": "/home/joinpro/data"
+      }
+    }
+  ],
+  "colours": {
+    "Raven": "darkred",
+    "Raptor": "darkblue"
+  }
+}
+\end{lstlisting}
+
