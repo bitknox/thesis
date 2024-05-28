@@ -41,7 +41,7 @@ To join raster and vector data, it is important that the projections of the data
 
 \subsubsection{sedona}
 
-Another popular system that can perform raster and vector joins is Apache Sedona. This feature was added recently, but they do not explicitly write how they perform spatial joins. Sedona operates on a distributed level. Ideally we would have liked to do a comparison with Sedona, but since it is a Spark application, it is hard to compare it to our system. 
+Another popular system that can perform raster and vector joins is Apache Sedona. This feature was added recently, but they do not explicitly write how they perform spatial joins. In the documentation it is stated that the raster hull is tested for predicates such as the intersects function \cite{SedonaRasterPredicate}. The output of the function is simply a boolean value. Sedona operates on a distributed level. Ideally we would have liked to do a comparison with Sedona, but since it is a Spark application, it is hard to compare it to our system. 
 
 
 \begin{itemize}
