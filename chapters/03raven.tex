@@ -1,6 +1,7 @@
 \section{Raven} \label{sec:raven}
+\todo[inline]{Write general introduction}
+\subsection{Data loading}
 \todo[inline]{Mention something about input}
-
 \subsection{Datastructures}
 \begin{itemize}
     \item \kraster
@@ -12,26 +13,6 @@
 \todo[inline]{Explain r-tree}
 
 The \rstar \cite{rstartree} variant improves the search time of the tree by minimizing the overlaps of the nodes at the cost of longer build time. The vector data is loaded in as polygons that get inserted into the \rstar, one by one. It is also possible to bulk load the vector data with Sort Tile Recursive \cite{str} (STR) and Overlap Minimizing Top-down \cite{omt} (OMT), which is beneficial for large vector datasets. We are going use a library that can do STR bulk loading and create the \rstar variant. Ideally, we would do STR loading with r-star nodes, but this was not available with the library we use.
-
-\todo[inline]{move this?}
-\paragraph{r-tree overlap}
-Since the search performance of the r-tree is impacting the join time, we want to provide a metric of how efficient the search is. The search time is mostly affected by how the directorial nodes overlap each other. To compare how these overlaps differ between different r-trees, an overlap ratio is calculated using the definition from  \citet{airtree}. If the ratio is 1.0, it means the query only traversed leaf nodes that had matches of entries. In table \ref{tab:overlap_ratio} there are overlap ratios for the \str, \rstar, and \rtree where the queried areas are the bounds of the individual "treecover" images.
-
-\begin{table}[H]
-    \centering
-    \begin{tabular}{|c|c|c|c|}\hline  
-         &  STR&  \rstar& r-tree
-\\ \hline  
-         Boundaries&  41.01\% &  49.27\% & 36.84\%
-\\ \hline  
-         Proteccted Areas&  26.68\%&  40.11\% & 25.82\%
-\\ \hline  
-         Woody&  25.05\%&  27.48\%& 25.24\%
-\\ \hline 
-    \end{tabular}
-    \caption{Overlap ratio for different types of r-trees with 3 different vector datasets. The minimum and maximum sub nodes for the r-tree nodes are 2 and 8 respectively.}
-    \label{tab:overlap_ratio}
-\end{table}
 
 \paragraph{\kraster} \todo[inline]{Explain \kraster}
 
@@ -194,6 +175,8 @@ $queryTrees \gets \text{segment tree of range span for each layer}$\\
 \end{algorithm}
 \caption*{Note that $intersections$ is used as a tuple of multi-sets, hence the set-builder notation on line 21 is used to count the number of appearances of a number $i$ in the $y^{th}$ multi-set in $intersections$.}
 \end{figure}
+
+\todo[inline]{Add pseudo code for the new \kraster function}
 
 \paragraph{Analysis of worst-case performance} under the assumption that the situation mentioned does not occur.
 

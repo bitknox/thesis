@@ -7,17 +7,19 @@ The workloads can be split into two major categories. The real-world datasets an
 The following section contains an overview of real world data we are going to use for the evaluation. There are some relevant properties included.
 \paragraph{Vector sets} 
 \mbox{} % :(
+\todo[inline]{add number of polygons to table}
 \begin{table}[H]
-\begin{tabular}{|l|l|l|}
+\begin{tabular}{|l|l|l|l|}
 \hline
-Dataset              & Size   & Vertices  \\ \hline
-Boundaries \cite{Boundaries} & 8.39MB & 548471    \\ \hline
-Protected areas & 534MB  & 34861822  \\ \hline
-Small Woody Features \cite{SmallWoodyFeaturesVector} & 1.59GB & 105349748 \\ \hline
+Dataset              & Size   & Vertices   &Polygons\\ \hline
+Boundaries \cite{Boundaries} & 8.39MB & 548471     &4293\\ \hline
+Protected areas & 534MB  & 34861822   &\\ \hline
+Small Woody Features \cite{SmallWoodyFeaturesVector} & 1.59GB & 105349748  &\\ \hline
 \end{tabular}
 \caption{The vector sets used along with size and number of vertices.}
+\label{tab:vectordata}
 \end{table}
-We have selected three vector sets with varying sizes. Since our system only supports ESRI shapefiles\footnote{\todo[inline]{link}}, the hard limit on filesize is 2GB. The sets are meant to show how we scale with the vector set size. The first the \textit{Boundaries} is a small vector set, but in terms of area, it covers the entire world. \textit{Protected areas} covers Europe, but has a lot more points to cover a smaller area. The final set \textit{Small Woody Features}. This set once again increases in size but covers a smaller area. This set only covers a subset of Spain.
+We have selected three vector sets with varying sizes. Since our system only supports ESRI shapefiles\footnote{\url{https://webhelp.esri.com/arcgisdesktop/9.3/index.cfm?TopicName=Geoprocessing\%20considerations\%20for\%20shapefile\%20output}}, the hard limit on file size is 2GB. The sets are meant to show how we scale with the vector set size. The first the \textit{Boundaries} is a small vector set, but in terms of area, it covers the entire world. \textit{Protected areas} covers Europe, but has a lot more points to cover a smaller area. The final set \textit{Small Woody Features}. This set once again increases in size but covers a smaller area. This set only covers a subset of Spain.
 
 
 \paragraph{Raster sets}
@@ -31,6 +33,7 @@ Treecover \cite{Treecover} & 52GB  & None        & 8         & 98      &52 B\\ \
 Small Woody Features \cite{SmallWoodyFeaturesRaster} & 6.04GB & LZW         & 8         & 3       &443.2 B\\ \hline
 \end{tabular}
 \caption{The raster sets used along with size, compression, bit depth, and number of colors.}
+\label{tab:rasterdata}
 \end{table}
 
 The raster sets we have picked are likewise three different sizes, to see how it scales. The properties we have included in the table, are all parameters that can affect the join time for \raven. The sets that have been selected, guarantee that there is an overlap, no matter the vector set that it is joined with. \textit{GLC2000} covers the entire world. For treecover, we have selected a subset that covers the entirety of Europe. Finally, the \textit{Small Woody Features} set covers the same area as the equivalent vector set.
@@ -152,6 +155,7 @@ The benchmarks are executed on a virtual machine with four cores and 16 GB of RA
     \item Same as above, but with more complex shapes.
     \item Vector set covering entire area, raster varies between: Voronoi noise, Perlin noise \& Large squares. (We might want to tweak params for the noise...)
 \end{itemize}
+\todo[inline]{List actual configurations, possibly in a table}
 
 %glc (22-22): 0.057 \%
 %treecover (81-84): 0.059 \%
@@ -208,13 +212,13 @@ The results in figure \ref{fig:res-boundaries-no-filter} show the same joins as 
     \label{fig:treecover-histogram}
 \end{figure}
 
-The Small Woody Features dataset differs from the others since it is compressed. The size of the original dataset \& and the \kraster cache we build is very similar in size, meaning that we do not have to spend time decompressing while reading the same amount of data. Another reason is that the dataset lends itself nicely to result compression. Comparing it to both GLC2000 and Treecover that have an average range length of 2.92 and 2.86 respectively, Small Woody Features is much higher at 17.15.
+The Small Woody Features dataset differs from the others since it is compressed. The size of the original dataset \& and the \kraster cache we build is very similar in size, meaning that we do not have to spend time decompressing while reading the same amount of data. Another reason is that the dataset lends itself nicely to result compression. Comparing it to both GLC2000 and Treecover that have an average range length of 2.92 and 2.86 respectively, Small Woody Features is much higher at 17.15. A full overview of range lengths for Small Woody Features can be found in \ref{fig:swf-history}.
 
 \begin{figure}
     \centering
     \includegraphics[width=\textwidth]{images/05evaluation/results/misc/hist_treecover.png}
     \caption{Caption}
-    \label{fig:enter-label}
+    \label{fig:swf-history}
 \end{figure}
 
 
@@ -225,9 +229,8 @@ The Small Woody Features dataset differs from the others since it is compressed.
     \label{fig:res-protected-filter}
 \end{figure}
 
-As we scale up the vector set size, we see that for small datasets \ravenjoin suffers a significant loss. We can again refer to table \ref{tab:vector-load-times} where it shows the load and build time for Protected Areas. A more interesting result is that of Small Woody Features. Comparing figure \ref{fig:res-boundaries-filter} with figure \ref{fig:res-protected-filter}, we see that there is a difference of roughly 18 minutes. 
+As we scale up the vector set size, we see that for small datasets \ravenjoin suffers a significant loss. We can again refer to table \ref{tab:vector-load-times} where it shows the load and build time for Protected Areas. A more interesting result is that of Small Woody Features. Comparing figure \ref{fig:res-boundaries-filter} with figure \ref{fig:res-protected-filter}, we see that there is a difference of roughly 18 minutes. \todo[inline]{Figure out why?} Again for the filtered result, we see that we save a b
 
-% Explain that reading the vector data dominates for small dataset such as GLC
 % Explain filtering that makes treecover fast
 %Explain why SWF is slower here than for boundaries
 
@@ -340,6 +343,31 @@ As seen in figure \ref{fig:old-vs-new}, The version of \raven using our new \tex
     \label{fig:cache-build-write}
 \end{figure}
 
+\subsubsection{R-tree types}
+\label{sec:r-tree-types}
+
+\todo[inline]{Write a short intro here.}
+To investigate the performance related to the \rtree data structure we test the datasets with a few different \rtree types. Note that there generally are not that many polygons in our dataset (see table \ref{}
+
+\paragraph{r-tree overlap}
+Since the search performance of the \rtree is impacting the join time, we want to provide a metric of how efficient the search is. The search time is mostly affected by how the directorial nodes overlap each other. To compare how these overlaps differ between different r-trees, an overlap ratio is calculated using the definition from  \citet{airtree}. If the ratio is 1.0, it means the query only traversed leaf nodes that had matches of entries. In table \ref{tab:overlap_ratio} there are overlap ratios for the \str, \rstar, and \rtree where the queried areas are the bounds of the individual "treecover" images.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|}\hline  
+         &  STR&  \rstar& r-tree
+\\ \hline  
+         Boundaries&  41.01\% &  49.27\% & 36.84\%
+\\ \hline  
+         Proteccted Areas&  26.68\%&  40.11\% & 25.82\%
+\\ \hline  
+         Woody&  25.05\%&  27.48\%& 25.24\%
+\\ \hline 
+    \end{tabular}
+    \caption{Overlap ratio for different types of r-trees with 3 different vector datasets. The minimum and maximum sub nodes for the r-tree nodes are 2 and 8 respectively.}
+    \label{tab:overlap_ratio}
+\end{table}
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{images/05evaluation/results/misc/Outer R-tree Type (Treecover) .png}
@@ -351,6 +379,9 @@ There are two separate uses of the \rtree in the system. The first one is an out
 
 The type of the inner \rtree has a smaller impact on performance. We ran multiple benchmarks and computed that the average time taken to complete all of them. The \str came out on top, being 4.5\% faster than an \rtree. The \rstar, on the other hand, performed 6.6\% worse than the \rtree. If we instead compute the average relative difference compared to an \rtree the \str performs just 0.1\% worse on average, whereas the \rstar performs 6.2\% worse.
 The plots for each run can be seen in appendix \ref{sec:inner-r-tree}.
+
+\subsection{Result summary}
+\todo[inline]{Write result summary}
 
 \subsection{Implementation details}
 This section covers the implementation details of the benchmarks. It will cover the benchmarking framework \textit{eagle} and the runners, that are executed by the framework.
@@ -364,7 +395,7 @@ This section covers the implementation details of the benchmarks. It will cover 
 
 This allows for easily configurable benchmarks, that can be run with very little oversight. All of the definitions used for benchmarking using eagle in this thesis are included in appendix \ref{app:bench}.
 
-\subsection{RaptorJoin}
+\subsubsection{RaptorJoin}
 \label{sec:raptor-join}
 To fairly evaluate \raptor \& \raven, we had to convert \raptor to a parallel single-machine algorithm. Since the datasets consist of multiple images, the simplest way to do this, is to have it handle multiple of these images at a time. Note that this also means that for single image datasets, it will not run in parallel, which is also the case for GLC2000. The rest of the implementation simply follows the paper \citetitle{raptorjoin} by \citet{raptorjoin}. Furthermore, it utilizes functionality from \citet{Beast-impl} to read data and compute intersections.
 
