@@ -347,7 +347,7 @@ As seen in figure \ref{fig:old-vs-new}, The version of \raven using our new \tex
 \label{sec:r-tree-types}
 
 \todo[inline]{Write a short intro here.}
-To investigate the performance related to the \rtree data structure we test the datasets with a few different \rtree types. Note that there generally are not that many polygons in our dataset (see table \ref{}
+To investigate the performance related to the \rtree data structure we test the datasets with a few different \rtree types. Note that there generally are not that many polygons in our dataset (see table \ref{tab:}
 
 \paragraph{r-tree overlap}
 Since the search performance of the \rtree is impacting the join time, we want to provide a metric of how efficient the search is. The search time is mostly affected by how the directorial nodes overlap each other. To compare how these overlaps differ between different r-trees, an overlap ratio is calculated using the definition from  \citet{airtree}. If the ratio is 1.0, it means the query only traversed leaf nodes that had matches of entries. In table \ref{tab:overlap_ratio} there are overlap ratios for the \str, \rstar, and \rtree where the queried areas are the bounds of the individual "treecover" images.
