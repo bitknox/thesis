@@ -1,6 +1,6 @@
 \section{Background} \label{sec:background}
 
-\subsection{Raster data}
+\subsection{Raster Data}
 \begin{itemize}
     \item what is raster data
 \end{itemize}
@@ -10,7 +10,7 @@ To map the raster data to the face of the earth, metadata is added with transfor
 
 \todo[inline]{Extend raster explanation with a figure}
 
-\subsection{Vector data}
+\subsection{Vector Data}
 \begin{itemize}
     \item what is vector data
 \end{itemize}
@@ -19,7 +19,7 @@ At a basic level, the vector data model is defined as points of X and Y coordina
 
 \todo[inline]{Expand vector explanation with a figure}
 
-\subsection{Spatial joins}
+\subsection{Spatial Joins}
 \begin{itemize}
     \item what is a spatial joins
     \item what is a raster-vector joins
@@ -33,19 +33,19 @@ To join raster and vector data, it is important that the projections of the data
 
 \subsection{State-of-the-art systems \& algorithms}
 
-\subsubsection{beast}
+\subsubsection{\beast}
 \beast is a state-of-the-art system that can join raster and vector data on a distributed level. It utilizes the \raptorjoin algorithm to do this. \beast contains the implementation of \raptorjoin that we are going to compare our method to.
-\todo[inline]{Expand beast explanation, we might }
+\todo[inline]{Expand \beast explanation, we might }
 
 \raptorjoin is designed to do distributed raster and vector joins by pixel ranges that are contained within the vector shapes. These ranges can then be used as scan lines to read the exact pixels that are needed for the join. The join only uses the metadata to create the pixel ranges which means the raster data is not read before it is strictly necessary. ...
 \todo[inline]{Go more into depth}
 
 \begin{itemize}
-    \item description of Beast
+    \item description of \beast
     \item description of RaptorJoin
 \end{itemize}
 
-\subsubsection{sedona}
+\subsubsection{Apache Sedona}
 
 Another popular system that can perform raster and vector joins is Apache Sedona. This feature was added recently, but they do not explicitly write how they perform spatial joins. In the documentation it is stated that the raster hull is tested for predicates such as the intersects function \cite{SedonaRasterPredicate}. The output of the function is simply a boolean value. Sedona operates on a distributed level. Ideally, we would have liked to do a comparison with Sedona, but since it is a Spark application, it is hard to compare it to our system. 
 

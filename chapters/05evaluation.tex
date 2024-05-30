@@ -1,20 +1,19 @@
 \section{Evaluation} \label{sec:evaluation}
-In this section we are going to evaluate Raven and compare it to a version of \beast's implementation of \raptorjoin that runs outside Spark. We will time the systems end to end of the joins which means the data load and the join itself are timed all together.
+In this section we are going to evaluate \raven and compare it to a version of \beast's implementation of \raptorjoin that runs outside Spark. We will time the systems end to end of the joins which means the data load and the join itself are timed all together.
 \subsection{Workload}
 \label{sec:workload}
 The workloads can be split into two major categories. The real-world datasets and synthetic datasets. The real-world datasets are meant to show real-world performance, allowing us to compare the different approaches. The synthetic sets are meant to test certain aspects of the approach where we control all the parameters, to examine exactly the subsystem or area of interest.
-\subsubsection{Real world data}
-The following section contains an overview of real world data we are going to use for the evaluation. There are some relevant properties included.
-\paragraph{Vector sets} 
+\subsubsection{Real World Data}
+The following section contains an overview of real world data we are going to use for the evaluation. There are some relevant properties included. 
+\paragraph{Vector Datasets} 
 \mbox{} % :(
-\todo[inline]{add number of polygons to table}
 \begin{table}[H]
 \begin{tabular}{|l|l|l|l|}
 \hline
 Dataset              & Size   & Vertices   &Polygons\\ \hline
-Boundaries \cite{Boundaries} & 8.39MB & 548471     &4293\\ \hline
-Protected areas & 534MB  & 34861822   &\\ \hline
-Small Woody Features \cite{SmallWoodyFeaturesVector} & 1.59GB & 105349748  &\\ \hline
+Boundaries \cite{Boundaries} & 8.39MB & 548471     & 4293\\ \hline
+Protected areas & 534MB  & 34861822   & 87251\\ \hline
+Small Woody Features \cite{SmallWoodyFeaturesVector} & 1.59GB & 105349748  & 462665\\ \hline
 \end{tabular}
 \caption{The vector sets used along with size and number of vertices.}
 \label{tab:vectordata}
@@ -22,7 +21,7 @@ Small Woody Features \cite{SmallWoodyFeaturesVector} & 1.59GB & 105349748  &\\ \
 We have selected three vector sets with varying sizes. Since our system only supports ESRI shapefiles\footnote{\url{https://webhelp.esri.com/arcgisdesktop/9.3/index.cfm?TopicName=Geoprocessing\%20considerations\%20for\%20shapefile\%20output}}, the hard limit on file size is 2GB. The sets are meant to show how we scale with the vector set size. The first the \textit{Boundaries} is a small vector set, but in terms of area, it covers the entire world. \textit{Protected areas} covers Europe, but has a lot more points to cover a smaller area. The final set \textit{Small Woody Features}. This set once again increases in size but covers a smaller area. This set only covers a subset of Spain.
 
 
-\paragraph{Raster sets}
+\paragraph{Raster Datasets}
 \mbox{} % :(
 \begin{table}[H]
 \begin{tabular}{|>{\raggedright\arraybackslash}p{2.5cm}|l|l|l|l|l|}
@@ -38,7 +37,7 @@ Small Woody Features \cite{SmallWoodyFeaturesRaster} & 6.04GB & LZW         & 8 
 
 The raster sets we have picked are likewise three different sizes, to see how it scales. The properties we have included in the table, are all parameters that can affect the join time for \raven. The sets that have been selected, guarantee that there is an overlap, no matter the vector set that it is joined with. \textit{GLC2000} covers the entire world. For treecover, we have selected a subset that covers the entirety of Europe. Finally, the \textit{Small Woody Features} set covers the same area as the equivalent vector set.
 
-\subsubsection{Synthetic data}
+\subsubsection{Synthetic Data}
 This section details the synthetic datasets along with examples and purpose.
 \paragraph{Raster (filtering workload)}
 Selectivity 100\%, 98,438\%, 96.875\% 93.75\%, 87.5\%, 75\%, 50\%, 25\%, 12.5\%, 6.25\%, 3.125\%, 1.562\%
@@ -65,7 +64,7 @@ Selectivity 100\%, 98,438\%, 96.875\% 93.75\%, 87.5\%, 75\%, 50\%, 25\%, 12.5\%,
 
 In figure \ref{fig:selectivity} we see examples of data used for selectivity testing. The white pixels match the percentage of selectivity. To make realistic landscapes, the base for these images is Perlin noise. The purpose of these datasets is to show how our approach improves once the selectivity percentage goes down.
  
-\paragraph{Raster (K2 Compression)}
+\paragraph{Raster (\kraster Compression)}
 \begin{itemize}
     \item For Voronoi noise, we vary the number of tiles. For each of the tiles, we arrange them, such that each neighboring tile has a different colour. We vary the number of tiles between $2^2, 2^3, ... ,2^8$. An example of two of these tiles can be found in figure \ref{fig:voronoi_example}, where figure \ref{fig:voronoi_16} has 16 tiles and \ref{fig:voronoi_64} has 64 tiles.
     \item Perlin noise. To make our synthetic data resemble real-world data, we utilize Perlin noise to generate the \textit{base} landscape. We then map this landscape to a desired amount of different colors to be used in both bit-depth testing and colour testing. An example of the type of landscapes we generate can be found in figure \ref{fig:perlin_example}.
@@ -130,6 +129,26 @@ This is to test the effects of the number of different raster values on our resu
 \paragraph{Vector (Shape density - Uniform distribution)}
 This set is for testing how the coverage of the raster data affects join time. The set is constructed by creating 10000 random polygons and placing them on a grid. Random shapes are generated, and their size is determined by the coverage we are aiming for.
 
+
+
+\subsection{Implementation}
+This section covers the implementation details of the benchmarks. It will cover the benchmarking framework \textit{eagle} and the runners, that are executed by the framework.
+\subsubsection{Eagle} \label{sec:eagle}
+\eagle is a framework for easily running containerized benchmarks. Eagle takes as input a JSON file that describes the experiments to run. It then orchestrates the necessary containers, mounts datasets, and executes the specified command inside the container. Finally, it collects the output from the benchmarked program, and automatically creates plots. This of course requires a consistent format for both input and output of the programs that are being benchmarked. For this purpose, we created thin wrappers that we have named \textit{runners}. These runners are responsible for taking input parameters, passing them correctly into the program that is to be executed, timing the runs, and finally printing a result, that is collected by \eagle. The runners we have created are:
+
+\paragraph{\raven Runner} Responsible for executing \ravenjoin. Built using Java, such that \raven can be imported as a dependency. Since we want to test a hot run, the runner itself is also responsible for running the required iterations. 
+
+\paragraph{Raptor Runner} Responsible for executing \raptorjoin. Like the \raven Runner, it imports our implementation of \raptorjoin as a dependency and is responsible for iterations.
+
+
+This allows for easily configurable benchmarks, that can be run with very little oversight. All of the definitions used for benchmarking using eagle in this thesis are included in appendix \ref{app:bench}.
+
+\subsubsection{RaptorJoin}
+\label{sec:raptor-join}
+To fairly evaluate \raptor \& \raven, we had to convert \raptor to a parallel single-machine algorithm. Since the datasets consist of multiple images, the simplest way to do this, is to have it handle multiple of these images at a time. Note that this also means that for single image datasets, it will not run in parallel, which is also the case for GLC2000. The rest of the implementation simply follows the paper \citetitle{raptorjoin} by \citet{raptorjoin}. Furthermore, it utilizes functionality from \citet{Beast-impl} to read data and compute intersections.
+
+\todo[inline]{Cold starts somewhere}
+
 \subsection{Metrics}
 \bigbreak
 \begin{mdframed}[hidealllines=true,backgroundcolor=lightgray!20]
@@ -140,8 +159,6 @@ The time it takes to build the \kraster with DAC.
 \paragraph*{Join Time} 
 The time it takes for the join itself to complete. This includes time for filtering.
 \end{mdframed}
-
-\subsection{Systems}
 
 \subsection{Setup}
 
@@ -178,88 +195,106 @@ This section covers results for all the real-world datasets for both \ravenjoin 
     \begin{tabular}{|l|l|l|l|}
         \hline
          & boundaries & protected areas & woody \\ \hline
-        read time & 57.7 ms & 14810 ms & 28700 ms \\ \hline
-        build time & 5.5 ms & 80.5 ms & 651 ms \\ \hline
+        read time & 44.1 ms & 21857 ms & 6244 ms \\ \hline
+        build time & 4.5 ms & 86 ms & 774 ms \\ \hline
     \end{tabular}
-    \caption{The time it takes to read the vector data and build outer \rtree data structure for it.}
+    \caption{The time it takes to read the vector data and build the outer \str data structure.}
     \label{tab:vector-load-times}
 \end{table}
 
 Table \ref{tab:vector-load-times} shows The time spent loading and building the outer \rtree for the 3 different vector datasets. As expected, both loading and \rtree building takes longer for the larger datasets.
- 
+
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\textwidth]{images/05evaluation/results/real world/Join Time - Boundaries (Filter) .png}
-    \caption{Join time of Boundaries with filtering.}
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+\centering
+    \includegraphics[width=\textwidth]{images/05evaluation/results/real world/Boundaries - Filter .png}
+    \caption{Join time with filtering.}
     \label{fig:res-boundaries-filter}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+\centering
+    \includegraphics[width=\textwidth]{images/05evaluation/results/real world/Boundaries - No Filter .png}
+    \caption{Join time without filtering.}
+    \label{fig:res-boundaries-no-filter}
+\end{subfigure}
+\caption{Boundaries with all raster datasets.}
 \end{figure}
 
 Figure \ref{fig:res-boundaries-filter} shows the results for both \ravenjoin \& \raptorjoin for the vector set Boundaries and all three raster sets. Since boundaries is a small vector set, the time it takes to build and load is negligible. We show the times in table \ref{tab:vector-load-times}. This means that for all of the above results, the time is dominated by reading raster data, doing the join operation, and collecting results. Since this is a filtered result, the main advantage is the heavily reduced amount of results that have to be created. This goes for all three datasets, although it is more heavily visible for the small dataset GLC2000, which also lends itself to result compression. The benefit of which is more visible in figure \ref{fig:res-boundaries-no-filter}, since filtering does not play a factor.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\textwidth]{images/05evaluation/results/real world/Join Time - Boundaries (No Filter) .png}
-    \caption{Join time of Boundaries without filtering.}
-    \label{fig:res-boundaries-no-filter}
-\end{figure}
 
 The results in figure \ref{fig:res-boundaries-no-filter} show the same joins as in figure \ref{fig:res-boundaries-filter}, but without a filter. For GLC2000 \raven is 95\% faster, which here it is mainly due to the raptor implementation not being parallelized for a single image dataset. Section \ref{sec:raptor-join} goes into further detail on how it is implemented. For Treecover, the two joins perform equally. The reason being that we are unable to benefit from a filter, but still have expensive lookups to retrieve values. Furthermore, while we are able to compress results, the average range length for Treecover is not long enough to offset the loss from value retrieval. A histogram of ranges lengths can be found in figure \ref{fig:treecover-histogram}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{images/05evaluation/results/misc/hist_treecover.png}
-    \caption{Caption}
+    \caption{Histogram of range length from result of a join where everything in Treecover is selected.}
     \label{fig:treecover-histogram}
 \end{figure}
 
-The Small Woody Features dataset differs from the others since it is compressed. The size of the original dataset \& and the \kraster cache we build is very similar in size, meaning that we do not have to spend time decompressing while reading the same amount of data. Another reason is that the dataset lends itself nicely to result compression. Comparing it to both GLC2000 and Treecover that have an average range length of 2.92 and 2.86 respectively, Small Woody Features is much higher at 17.15. A full overview of range lengths for Small Woody Features can be found in \ref{fig:swf-history}.
+The Small Woody Features dataset differs from the others since it is compressed. The size of the original dataset \& and the \kraster cache we build is very similar in size, meaning that we do not have to spend time decompressing while reading the same amount of data. Another reason is that the dataset lends itself nicely to result compression. Comparing it to both GLC2000 and Treecover that have an average range length of 2.92 and 2.86 respectively, Small Woody Features is much higher at 17.15. A full overview of range lengths for Small Woody Features can be found in figure \ref{fig:swf-history}.
 
-\begin{figure}
+\begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{images/05evaluation/results/misc/hist_treecover.png}
-    \caption{Caption}
+    \includegraphics[width=\textwidth]{images/05evaluation/results/misc/hist_woody.png}
+    \caption{Histogram of range length from result of a join where everything in Small Woody Features (raster) is selected.}
     \label{fig:swf-history}
 \end{figure}
 
 
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\textwidth]{images/05evaluation/results/real world/Join Time - Protected Areas (Filter) .png}
-    \caption{Join time of Protected Areas with filtering.}
+\centering
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+    \includegraphics[width=\textwidth]{images/05evaluation/results/real world/Protected Areas - Filter .png}
+    \caption{Join time with filtering.}
     \label{fig:res-protected-filter}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+    \includegraphics[width=\textwidth]{images/05evaluation/results/real world/Protected Areas - No Filter .png}
+    \caption{Join time without filtering.}
+    \label{fig:res-protected-no-filter}
+\end{subfigure}
+\caption{Protected Areas with all raster datasets.}
 \end{figure}
 
-As we scale up the vector set size, we see that for small datasets \ravenjoin suffers a significant loss. We can again refer to table \ref{tab:vector-load-times} where it shows the load and build time for Protected Areas. A more interesting result is that of Small Woody Features. Comparing figure \ref{fig:res-boundaries-filter} with figure \ref{fig:res-protected-filter}, we see that there is a difference of roughly 18 minutes. \todo[inline]{Figure out why?} Again for the filtered result, we see that we save a b
+As we scale up the vector set size, we see that for small datasets \ravenjoin suffers a significant loss. We can again refer to table \ref{tab:vector-load-times} where it shows the load and build time for Protected Areas. A more interesting result is that of Small Woody Features. Comparing figure \ref{fig:res-boundaries-filter} with figure \ref{fig:res-protected-filter}, we see that there is a difference of roughly 18 minutes. \todo[inline]{Figure out why?} Again for the filtered result, we see that a large difference, simply due to there being much fewer results.
 
 % Explain filtering that makes treecover fast
 %Explain why SWF is slower here than for boundaries
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\textwidth]{images/05evaluation/results/real world/Join Time - Protected Areas (No Filter) .png}
-    \caption{Join time of Protected Areas without filtering.}
-    \label{fig:res-protected-no-filter}
-\end{figure}
-
 %Explain why treecover is suddenly so much slower. Explain why SWF is not affected as badly.
 % Quick mention of GLC again.
 
+
+\todo[inline]{Change "Woody" in graph title}
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\textwidth]{images/05evaluation/results/real world/Join Time - Woody (Filter) .png}
-    \caption{Join time of Small Woody Features with filtering.}
+\centering
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+    \includegraphics[width=\textwidth]{images/05evaluation/results/real world/SWF (Vector) - Filter .png}
+    \caption{Join time with filtering.}
     \label{fig:res-woody-filter}
-\end{figure}
-
-% Explain perfect overlap
-% 
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\textwidth]{images/05evaluation/results/real world/Join Time - Woody (No Filter) .png}
-    \caption{Join time of Small Woody Features without filtering.}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+    \includegraphics[width=\textwidth]{images/05evaluation/results/real world/SWF (Vector) - No Filter .png}
+    \caption{Join time without filtering.}
     \label{fig:res-woody-no-filter}
+\end{subfigure}
+\caption{Small Woody Features (vector) with all raster datasets.}
+\label{fig:res-woody}
 \end{figure}
+
+Figure \ref{fig:res-woody} shows the result for the small woody features vector set. For the GLC2000 raster set, we again have to refer to table \ref{tab:vector-load-times} to see that almost all of the time, is spent reading the vector data. Comparing figure \ref{fig:res-woody-filter} with figure \ref{fig:res-woody-no-filter}, we see that for \raven, the join times are fairly similar. While this is the largest vector set being used for testing, it is also the one covering the smallest area. 
+
+The join between SWF(Vector) and SWF is also the largest difference we see between \raven and \raptor. Referring back to table \ref{tab:rasterdata} we can see that SWF only has three colours. This means that we can benefit from range compression easily. Furthermore, since the vector data is a subset of the SWF raster data, any overlaps that we do find, should in theory result in longer ranges. This is also visible in figure \ref{fig:swf-history}, which shows range length distribution.
+
+
 
 % Explain why there is not a significant difference from the filter version (eg. since there is a perfect overlap, in theory no values should be filtered)
 
@@ -270,28 +305,40 @@ Joining the tree cover with no filter takes longer than \raptorjoin. This is bec
 
 \subsubsection{Synthetic data}
 
+
+
+
+
 \begin{figure}[H]
     \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+    \centering
     \includegraphics[width=\textwidth]{images/05evaluation/results/synthetic/Join Time - Selectivity .png}
-    \caption{Join times for filters with different levels of selectivity.}
+    \caption{Join times for filters with different levels of selectivity. \\ \mbox{} \\ \mbox{}}
     \label{fig:filter-selectivity}
-\end{figure}
-
-In figure \ref{fig:filter-selectivity}, we see that selecting everything performs the same as getting no results. This is due to the fact that each pixel range can be directly added to the results once the value has been accessed from the \kraster. In this scenario, there are pixel ranges that span across the whole image and there is only one pixel range per row in the image. The low selectivity gains performance as there are fewer results to be collected. At 50\% selectivity, the algorithm has to search a bit in the \kraster and at the same time there will be more pixel ranges in total. 
-
-\begin{figure}[H]
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
     \centering
     \includegraphics[width=\textwidth]{images/05evaluation/results/misc/Join Time - Number of Ranges .png}
     \caption{Join time as a function of the number of ranges produced as a result of \ravenjoin. A preview of the dataset can be found in figure \ref{fig:perlin_colors}. }
     \label{fig:num-ranges}
+    \end{subfigure}
 \end{figure}
+
+
+In figure \ref{fig:filter-selectivity}, we see that selecting everything performs the same as getting no results. This is due to the fact that each pixel range can be directly added to the results once the value has been accessed from the \kraster. In this scenario, there are pixel ranges that span across the whole image and there is only one pixel range per row in the image. The low selectivity gains performance as there are fewer results to be collected. At 50\% selectivity, the algorithm has to search a bit in the \kraster and at the same time there will be more pixel ranges in total. 
+
+
+
+
 
 In figure \ref{fig:num-ranges}, we see a strong correlation between how much the \kraster can compress the image into nodes and how quickly we can join. In this benchmark, all pixels are joined. This can be explained by how we have to search the \kraster structure for values. The more ranges there are, the deeper the tree will be, and as such, we also have to search the much deeper tree, to extract values. Furthermore, we also have to create additional results, which also takes a significant amount of time. Figure \ref{fig:result_creation_time} shows the difference between a join where all the work is done, but no results are collected compared to a join, where we use the basic range-value result type. This is a significant increase, and almost makes up 75\% of the time a join takes in total. This means that a way of reducing the amount of results can have a large impact on join time. Section \ref{sec:future_work} outlines a possible improvement, that would improve the amount we can compress results.
 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{images/05evaluation/results/misc/result_creation_time.png}
+    \includegraphics[width=0.5\textwidth]{images/05evaluation/results/misc/result_creation_time.png}
     \caption{Comparison of join times using the \textit{Treecover} raster set and \textit{Boundaries} vector set. For one of them, the join work is done, but the results are thrown away. The other is using the range-value result type.}
     \label{fig:result_creation_time}
 \end{figure}
@@ -301,7 +348,7 @@ It is also interesting to note, that for \raptorjoin, this would be a completely
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{images/05evaluation/results/synthetic/Vector Density .png}
+    \includegraphics[height=6cm]{images/05evaluation/results/synthetic/Vector Density .png}
     \caption{Join time as a function of the number of the area covered by the vector data. }
     \label{fig:vector-density}
 \end{figure}
@@ -326,7 +373,7 @@ As mentioned in section \ref{sec:extract-cells}, we came up with a modification 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{images/05evaluation/results/misc/Old vs New Join (Filter) .png}
+    \includegraphics[height=6cm]{images/05evaluation/results/misc/Old vs New Join (Filter) .png}
     \caption{Comparison of join time between two versions of \ravenjoin using the two versions of \textit{extractCells} described in section \ref{sec:extract-cells}. All joins in this plot use the \textit{Protected Areas} vector set and the same filter used in the filtered joins of section \ref{sec:real-data}.}
     \label{fig:old-vs-new}
 \end{figure}
@@ -338,7 +385,7 @@ As seen in figure \ref{fig:old-vs-new}, The version of \raven using our new \tex
 
  \begin{figure}[H]
     \centering
-    \includegraphics[width=0.6\textwidth]{images/05evaluation/results/misc/Cache Build & Write Times .png}
+    \includegraphics[width=0.5\textwidth]{images/05evaluation/results/misc/Cache Build & Write Times .png}
     \caption{Time taken to build \& write the cache for all raster sets.}
     \label{fig:cache-build-write}
 \end{figure}
@@ -346,8 +393,7 @@ As seen in figure \ref{fig:old-vs-new}, The version of \raven using our new \tex
 \subsubsection{R-tree types}
 \label{sec:r-tree-types}
 
-\todo[inline]{Write a short intro here.}
-To investigate the performance related to the \rtree data structure we test the datasets with a few different \rtree types. Note that there generally are not that many polygons in our dataset (see table \ref{tab:}
+To investigate the performance related to the \rtree data structure we test the datasets with a few different \rtree types. Note that generally there are not that many polygons in our dataset (see table \ref{tab:vectordata}) which means the \rtree will not be that deep.
 
 \paragraph{r-tree overlap}
 Since the search performance of the \rtree is impacting the join time, we want to provide a metric of how efficient the search is. The search time is mostly affected by how the directorial nodes overlap each other. To compare how these overlaps differ between different r-trees, an overlap ratio is calculated using the definition from  \citet{airtree}. If the ratio is 1.0, it means the query only traversed leaf nodes that had matches of entries. In table \ref{tab:overlap_ratio} there are overlap ratios for the \str, \rstar, and \rtree where the queried areas are the bounds of the individual "treecover" images.
@@ -370,7 +416,7 @@ Since the search performance of the \rtree is impacting the join time, we want t
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{images/05evaluation/results/misc/Outer R-tree Type (Treecover) .png}
+    \includegraphics[height=6cm]{images/05evaluation/results/misc/Outer R-tree Type (Treecover) .png}
     \caption{Join time as a function of the number of the area covered by the vector data. }
     \label{fig:outer-r-tree}
 \end{figure}
@@ -382,22 +428,3 @@ The plots for each run can be seen in appendix \ref{sec:inner-r-tree}.
 
 \subsection{Result summary}
 \todo[inline]{Write result summary}
-
-\subsection{Implementation details}
-This section covers the implementation details of the benchmarks. It will cover the benchmarking framework \textit{eagle} and the runners, that are executed by the framework.
-\subsubsection{Eagle} \label{sec:eagle}
-\eagle is a framework for easily running containerized benchmarks. Eagle takes as input a JSON file that describes the experiments to run. It then orchestrates the necessary containers, mounts datasets, and executes the specified command inside the container. Finally, it collects the output from the benchmarked program, and automatically creates plots. This of course requires a consistent format for both input and output of the programs that are being benchmarked. For this purpose, we created thin wrappers that we have named \textit{runners}. These runners are responsible for taking input parameters, passing them correctly into the program that is to be executed, timing the runs, and finally printing a result, that is collected by \eagle. The runners we have created are:
-
-\paragraph{Raven Runner} Responsible for executing \ravenjoin. Built using Java, such that \raven can be imported as a dependency. Since we want to test a hot run, the runner itself is also responsible for running the required iterations. 
-
-\paragraph{Raptor Runner} Responsible for executing \raptorjoin. Like the raven runner, it imports our implementation of \raptorjoin as a dependency and is responsible for iterations.
-
-
-This allows for easily configurable benchmarks, that can be run with very little oversight. All of the definitions used for benchmarking using eagle in this thesis are included in appendix \ref{app:bench}.
-
-\subsubsection{RaptorJoin}
-\label{sec:raptor-join}
-To fairly evaluate \raptor \& \raven, we had to convert \raptor to a parallel single-machine algorithm. Since the datasets consist of multiple images, the simplest way to do this, is to have it handle multiple of these images at a time. Note that this also means that for single image datasets, it will not run in parallel, which is also the case for GLC2000. The rest of the implementation simply follows the paper \citetitle{raptorjoin} by \citet{raptorjoin}. Furthermore, it utilizes functionality from \citet{Beast-impl} to read data and compute intersections.
-
-
-
