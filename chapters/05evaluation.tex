@@ -269,8 +269,6 @@ As we scale up the vector set size, we see that for small datasets \ravenjoin su
 %Explain why treecover is suddenly so much slower. Explain why SWF is not affected as badly.
 % Quick mention of GLC again.
 
-
-\todo[inline]{Change "Woody" in graph title}
 \begin{figure}[H]
 \centering
 \begin{subfigure}[b]{0.45\textwidth}
@@ -425,6 +423,17 @@ There are two separate uses of the \rtree in the system. The first one is an out
 
 The type of the inner \rtree has a smaller impact on performance. We ran multiple benchmarks and computed that the average time taken to complete all of them. The \str came out on top, being 4.5\% faster than an \rtree. The \rstar, on the other hand, performed 6.6\% worse than the \rtree. If we instead compute the average relative difference compared to an \rtree the \str performs just 0.1\% worse on average, whereas the \rstar performs 6.2\% worse.
 The plots for each run can be seen in appendix \ref{sec:inner-r-tree}.
+
+\subsubsection{Memory}
+\label{sec:memory}
+\begin{figure}[H]
+    \centering
+    \includegraphics[height=6cm]{images/05evaluation/results/misc/memcomparison.png}
+    \caption{Comparison of memory consumption for a join with SWF (raster, 2 images) and Boundaries.}
+    \label{fig:memcomp}
+\end{figure}
+
+\todo[inline]{write explanation of memory result}
 
 \subsection{Result summary}
 \todo[inline]{Write result summary}

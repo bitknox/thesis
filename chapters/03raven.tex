@@ -16,6 +16,13 @@ The \rstar \cite{rstartree} variant improves the search time of the tree by mini
 
 \paragraph{\kraster} \todo[inline]{Explain \kraster}
 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/03method/k2tree.drawio.png}
+    \caption{Example of how a raster image can be compressed using the \kraster data structure. The figure is adapted from the paper \textit{Scalable and queryable compressed storage structure for raster data} by Susana Ladra et al.\cite{k2raster}}
+    \label{fig:enter-label}
+\end{figure}
+
 \subsection{Join Algorithm}
 
 \ravenjoin is based on an algorithm described in \citetitle{k2rasterjoin} by \citet{k2rasterjoin}. The main differences between that algorithm and \ravenjoin are
@@ -37,6 +44,7 @@ If some values of the range match the filter and some don't, the algorithm has t
 
 A flowchart of this central part of the algorithm can be seen in figure \ref{fig:join-flow-chart}.
 
+\todo[inline]{simplify figure (remove stack and such)}
 \begin{figure}[H]
     \centering
     \includegraphics[width=1.0\textwidth]{images/03method/join flow chart.png}
@@ -64,12 +72,24 @@ In \citetitle{k2rasterjoin} by \citet{k2rasterjoin}, which is the paper our syst
 Applying a special filter that applies a separate filter for each sample is also possible using a filter function. This can save time over the more naive approach of filtering based on a range that encompasses all the wanted values and then manually filtering the results afterwards. The reason it is faster is not that it saves time on lookups in the \kraster tree, but rather that it produces fewer results initially and avoids the final iteration over the results to further filter them.
 
 \subsubsection{Quadrant Checking}
-\todo[inline]{Add Figure}
 This is the fast initial check the join algorithm performs for nodes of interest in the \rstar. It works by starting at a given node of the \kraster tree to find the child node that contains the given geometry. It recursively calls itself with the currently found node. If none of the children contain the geometry, it means that the node currently being examined, is the smallest node that does. Once the smallest \kraster node containing the given geometry has been found, its minimum and maximum values can be given to the filter. The filter can then determine if the node in question should be examined further. 
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/03method/checkQuadrant.png}
+    \caption{Example showing how checkQuadrant would evaluate the red Polygon. Since there is no full overlap for any of the inner \kraster nodes. The top left outer \kraster node would be returned.}
+    \label{fig:check-quadrant}
+\end{figure}
+
 \subsubsection{MBR Checking}
-\todo[inline]{Add Figure}
 This is a slower version of the previous method. The goal of this method is to find the minimum and maximum raster values stored in the part of the \kraster tree that overlaps with the given geometry. We are therefore interested in finding all \kraster nodes that are contained within the given geometry. This is done by a search of the \kraster tree resembling a depth first search. The maximum value stored within the pixels that overlap with the geometries can be found by taking the maximum of the maximum values of all \kraster nodes contained within the geometry. The minimum can be found in a similar way. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/03method/checkMBR.png}
+    \caption{Example showing which \kraster nodes would be examined to determine the minimum and maximum values. The method would examine the values of the blue nodes(e.g. nodes that are contained within the MBR of the polygon)}
+    \label{fig:check-mbr}
+\end{figure}
 
 \subsubsection{Result Types}
 \label{sec:result-types}
@@ -307,7 +327,7 @@ in the worst case, under the assumptions mentioned. There is therefore at least 
 \subsubsection{Out of Core Execution}
 
 To achieve out of core execution we partition the raster data into fixed sized squares. We can then process one square at a time without having the rest of them loaded in memory. This means it is important that the raster data is only read in these same portions for each partition. Since we know the bounds of the tiles, we can exclude vector data for each tile before the join. For any given values of $k$ in the \kraster, the optimal tile size will be a power of $k$. At the same time small tile sizes will accumulate too much overhead. The tiles are the initializing point of a stream that can be parallelized. The tiles will receive their own raster readers that work on an independent level, which does not need synchronization.
-This approach also allows \raven to use almost no memory other than what is needed to store the vector data.
+This approach also allows \raven to use almost no memory other than what is needed to store the vector data. The effects of this are examined in section \ref{sec:memory}.
 
 
 \begin{itemize}
