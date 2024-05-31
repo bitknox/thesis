@@ -35,7 +35,7 @@ Small Woody Features \cite{SmallWoodyFeaturesRaster} & 6.04GB & LZW         & 8 
 \label{tab:rasterdata}
 \end{table}
 
-The raster sets we have picked are likewise three different sizes, to see how it scales. The properties we have included in the table, are all parameters that can affect the join time for \raven. The sets that have been selected, guarantee that there is an overlap, no matter the vector set that it is joined with. \textit{GLC2000} covers the entire world. For treecover, we have selected a subset that covers the entirety of Europe. Finally, the \textit{Small Woody Features} set covers the same area as the equivalent vector set.
+The raster sets we have picked are likewise three different sizes, to see how it scales. The properties we have included in the table, are all parameters that can affect the join time for \raven. The sets that have been selected, guarantee that there is an overlap, no matter the vector set that it is joined with. \textit{GLC2000} covers the entire world. For Treecover, we have selected a subset that covers the entirety of Europe. Finally, the \textit{Small Woody Features} set covers the same area as the equivalent vector set.
 
 \subsubsection{Synthetic Data}
 This section details the synthetic datasets along with examples and purpose.
@@ -147,7 +147,6 @@ This allows for easily configurable benchmarks, that can be run with very little
 \label{sec:raptor-join}
 To fairly evaluate \raptor \& \raven, we had to convert \raptor to a parallel single-machine algorithm. Since the datasets consist of multiple images, the simplest way to do this, is to have it handle multiple of these images at a time. Note that this also means that for single image datasets, it will not run in parallel, which is also the case for GLC2000. The rest of the implementation simply follows the paper \citetitle{raptorjoin} by \citet{raptorjoin}. Furthermore, it utilizes functionality from \citet{Beast-impl} to read data and compute intersections.
 
-\todo[inline]{Cold starts somewhere}
 
 \subsection{Metrics}
 \bigbreak
@@ -162,7 +161,8 @@ The time it takes for the join itself to complete. This includes time for filter
 
 \subsection{Setup}
 
-The benchmarks are executed on a virtual machine with four cores and 16 GB of RAM. The java runtime is version 16 and it is configured to use 14 GB for all the real world datasets.
+The benchmarks are executed on a virtual machine with four cores and 16 GB of RAM. The java runtime is version 16 and it is configured to use 14 GB for all the real world datasets. To get more stable experiment results, all the first measures (cold starts) are excluded from the results. The first measures are often unstable and makes it harder to arrive at conclusions.
+
 
 \subsection{Configurations}
 \begin{itemize}
@@ -174,6 +174,8 @@ The benchmarks are executed on a virtual machine with four cores and 16 GB of RA
 \end{itemize}
 \todo[inline]{List actual configurations, possibly in a table}
 
+
+
 %glc (22-22): 0.057 \%
 %treecover (81-84): 0.059 \%
 %woody (1-1): 1.96\%
@@ -183,18 +185,21 @@ The result type of \ravenjoin will always be the range-value (see section \ref{s
 The selectivity of the filtered joins are small to highlight the efficiency of the algorithm for this case. As listed, the selectivity is set to 0.057\%, 0.059\% and 1.96\% for GLC2000, Treecover and Small Woody Features respectively.
 
 The maximum and minimum number of children for \rstar nodes are fixed at 8 and 1 respectively for all benchmarks. This is because most of the time it does not make a significant performance difference for the join. It is very dataset dependent and there does not seem to be a clear pattern for the parameters influence of the join. 
-\subsection{Results}
-\subsubsection{Real world data}
+\subsection{Comparative results}
+\label{sec:comparative-results}
+
+This section covers all experiments conducted to compare \raven with \raptor. 
+
+\subsubsection{Real-World Data}
 \label{sec:real-data}
+
 This section covers results for all the real-world datasets for both \ravenjoin and \raptorjoin. The datasets and their properties were outlined in \ref{sec:workload}. Results are shown both with filtering and without filtering, to highlight the benefits of the pushed-down filter approach. All the results for \ravenjoin are done with a cache, which means that to get these speeds, such a cache would need to be built first. Section \ref{sec:cache-building-times} covers the time it takes to build the cache.
-
-
 
 \begin{table}[H]
 \centering
     \begin{tabular}{|l|l|l|l|}
         \hline
-         & boundaries & protected areas & woody \\ \hline
+         & Boundaries & Protected Areas & SWF (vector) \\ \hline
         read time & 44.1 ms & 21857 ms & 6244 ms \\ \hline
         build time & 4.5 ms & 86 ms & 774 ms \\ \hline
     \end{tabular}
@@ -261,7 +266,7 @@ The Small Woody Features dataset differs from the others since it is compressed.
 \caption{Protected Areas with all raster datasets.}
 \end{figure}
 
-As we scale up the vector set size, we see that for small datasets \ravenjoin suffers a significant loss. We can again refer to table \ref{tab:vector-load-times} where it shows the load and build time for Protected Areas. A more interesting result is that of Small Woody Features. Comparing figure \ref{fig:res-boundaries-filter} with figure \ref{fig:res-protected-filter}, we see that there is a difference of roughly 18 minutes. \todo[inline]{Figure out why?} Again for the filtered result, we see that a large difference, simply due to there being much fewer results.
+As we scale up the vector set size, we see that for small datasets \ravenjoin suffers a significant loss. We can again refer to table \ref{tab:vector-load-times} where it shows the load and build time for Protected Areas. A more interesting result is that of Small Woody Features. Comparing figure \ref{fig:res-boundaries-filter} with figure \ref{fig:res-protected-filter}, we see that there is a difference of roughly 18 minutes, or around 62\%. Part of the reason for this is that Protected Areas produces around 21\% more results than Boundaries when joined with SWF. The remaining difference could be caused by memory being a problem for Protected Areas, meaning time must be spent clearing memory much more often. \todo[inline]{Figure out why? (kind of done)} Again for the filtered result, we see that there is a large difference, simply due to there being much fewer results.
 
 % Explain filtering that makes treecover fast
 %Explain why SWF is slower here than for boundaries
@@ -288,7 +293,7 @@ As we scale up the vector set size, we see that for small datasets \ravenjoin su
 \label{fig:res-woody}
 \end{figure}
 
-Figure \ref{fig:res-woody} shows the result for the small woody features vector set. For the GLC2000 raster set, we again have to refer to table \ref{tab:vector-load-times} to see that almost all of the time, is spent reading the vector data. Comparing figure \ref{fig:res-woody-filter} with figure \ref{fig:res-woody-no-filter}, we see that for \raven, the join times are fairly similar. While this is the largest vector set being used for testing, it is also the one covering the smallest area. 
+Figure \ref{fig:res-woody} shows the result for the Small Woody Features vector set. For the GLC2000 raster set, we again have to refer to table \ref{tab:vector-load-times} to see that almost all of the time, is spent reading the vector data. Comparing figure \ref{fig:res-woody-filter} with figure \ref{fig:res-woody-no-filter}, we see that for \raven, the join times are fairly similar. While this is the largest vector set being used for testing, it is also the one covering the smallest area. 
 
 The join between SWF(Vector) and SWF is also the largest difference we see between \raven and \raptor. Referring back to table \ref{tab:rasterdata} we can see that SWF only has three colours. This means that we can benefit from range compression easily. Furthermore, since the vector data is a subset of the SWF raster data, any overlaps that we do find, should in theory result in longer ranges. This is also visible in figure \ref{fig:swf-history}, which shows range length distribution.
 
@@ -299,70 +304,55 @@ The join between SWF(Vector) and SWF is also the largest difference we see betwe
 For compressed raster datasets there is a large performance gap compared to \raptorjoin. Decompressing the data takes extra time and likewise is this time saved with the \kraster index. 
 
 
-Joining the tree cover with no filter takes longer than \raptorjoin. This is because there is little time to save creating range values for this dataset and therefore the algorithm has to retrieve values at the maximum depth of the \kraster. This has a large cost even if the vector set only has a few large polygons as seen in figure \ref{fig:res-boundaries-no-filter} and \ref{fig:res-protected-no-filter}.
-
-\subsubsection{Synthetic data}
+Joining the Treecover with no filter takes longer than \raptorjoin. This is because there is little time to save creating range values for this dataset and therefore the algorithm has to retrieve values at the maximum depth of the \kraster. This has a large cost even if the vector set only has a few large polygons as seen in figure \ref{fig:res-boundaries-no-filter} and \ref{fig:res-protected-no-filter}.
 
 
 
 
+
+
+
+\subsubsection{Memory}
+\label{sec:memory}
+
+The memory consumption of the \kraster data structure is quite low, especially in tandem with a small partition size. Additionally, the results are compressed which in total mean the system can operate with little memory. In figure \ref{fig:mem-comp}, the memory consumption Raven and Raptor is compared by limiting it to the least amount of memory needed. Note that both systems are executed with four cores and the memory scale in proportion to the number of cores. \raven needed 50 MB while \raptor needed 800 MB to perform a join without crashing. Another reason for this large difference is that \raven can use any given partition size, whereas \raptor can only use the one that is built into the image it is joining. The benefit of using little memory is that the work to free memory will be less frequent.
 
 \begin{figure}[H]
     \centering
-    \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[height=6cm]{images/05evaluation/results/misc/memcomparison.png}
+    \caption{Comparison of memory consumption for a join with SWF (raster, 2 images) and Boundaries.}
+    \label{fig:mem-comp}
+\end{figure}
+
+
+\subsection{\raven analysis}
+This section covers
+
+\subsubsection{Size of Result}
+
+In figure \ref{fig:num-ranges}, we see a strong correlation between how much the \kraster can compress the image into nodes and how quickly we can join. In this benchmark, all pixels are joined. This can be explained by how we have to search the \kraster structure for values. The more ranges there are, the deeper the tree will be, and as such, we also have to search the much deeper tree, to extract values. Furthermore, we also have to create additional results, which also takes a significant amount of time. Figure \ref{fig:result_creation_time} shows the difference between a join where all the work is done, but no results are collected compared to a join, where we use the basic range-value result type. This is a significant increase, and almost makes up 75\% of the time a join takes in total. This means that a way of reducing the amount of results can have a large impact on join time. Section \ref{sec:future_work} outlines a possible improvement, that would improve the amount we can compress results.
+
+\begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{images/05evaluation/results/synthetic/Join Time - Selectivity .png}
-    \caption{Join times for filters with different levels of selectivity. \\ \mbox{} \\ \mbox{}}
-    \label{fig:filter-selectivity}
+    \begin{subfigure}[b]{0.35\textwidth}
+    \centering
+    \includegraphics[height=6cm]{images/05evaluation/results/misc/result_creation_time.png}
+    \caption{Comparison of join times using the \textit{Treecover} raster set and \textit{Boundaries} vector set. For one of them, the join work is done, but the results are thrown away. The other is using the range-value result type.}
+    \label{fig:result_creation_time}
     \end{subfigure}
     \hfill
-    \begin{subfigure}[b]{0.45\textwidth}
+    \begin{subfigure}[b]{0.6\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{images/05evaluation/results/misc/Join Time - Number of Ranges .png}
-    \caption{Join time as a function of the number of ranges produced as a result of \ravenjoin. A preview of the dataset can be found in figure \ref{fig:perlin_colors}. }
+    \includegraphics[height=6cm]{images/05evaluation/results/misc/Join Time - Number of Ranges .png}
+    \caption{Join time as a function of the number of ranges produced as a result of \ravenjoin. A preview of the dataset can be found in figure \ref{fig:perlin_colors}. \Repeater{4}{\\ \mbox{}} }
     \label{fig:num-ranges}
     \end{subfigure}
 \end{figure}
 
 
-In figure \ref{fig:filter-selectivity}, we see that selecting everything performs the same as getting no results. This is due to the fact that each pixel range can be directly added to the results once the value has been accessed from the \kraster. In this scenario, there are pixel ranges that span across the whole image and there is only one pixel range per row in the image. The low selectivity gains performance as there are fewer results to be collected. At 50\% selectivity, the algorithm has to search a bit in the \kraster and at the same time there will be more pixel ranges in total. 
-
-
-
-
-
-In figure \ref{fig:num-ranges}, we see a strong correlation between how much the \kraster can compress the image into nodes and how quickly we can join. In this benchmark, all pixels are joined. This can be explained by how we have to search the \kraster structure for values. The more ranges there are, the deeper the tree will be, and as such, we also have to search the much deeper tree, to extract values. Furthermore, we also have to create additional results, which also takes a significant amount of time. Figure \ref{fig:result_creation_time} shows the difference between a join where all the work is done, but no results are collected compared to a join, where we use the basic range-value result type. This is a significant increase, and almost makes up 75\% of the time a join takes in total. This means that a way of reducing the amount of results can have a large impact on join time. Section \ref{sec:future_work} outlines a possible improvement, that would improve the amount we can compress results.
-
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.5\textwidth]{images/05evaluation/results/misc/result_creation_time.png}
-    \caption{Comparison of join times using the \textit{Treecover} raster set and \textit{Boundaries} vector set. For one of them, the join work is done, but the results are thrown away. The other is using the range-value result type.}
-    \label{fig:result_creation_time}
-\end{figure}
-
 It is also interesting to note, that for \raptorjoin, this would be a completely flat line, as it does not support compressing results into ranges. It would also not make sense to do this, since they would still be forced to iterate each pixel to create the ranges, whereas we can use the \kraster structure to efficiently extract ranges. This also speaks to the more general fact, that the dataset matters a lot more for \ravenjoin, than it does for \raptorjoin. 
 
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[height=6cm]{images/05evaluation/results/synthetic/Vector Density .png}
-    \caption{Join time as a function of the number of the area covered by the vector data. }
-    \label{fig:vector-density}
-\end{figure}
-
-Figure \ref{fig:vector-density} shows that the join time of \ravenjoin depends on the spatial selectivity. This makes sense, since having a larger overlap between vector and raster data produces more results and therefore takes longer. The shape of the graph can be explained by the fact that the number of ranges created depends on the height of each vector shape. This height grows with the square root of the spatial selectivity in our tests. 
-
-\todo[inline]{skal vi bevise at det er det der sker?}
-
-
-factors that make us gain performance
-\begin{itemize}
-    \item our cached and compressed index.
-    \item we can return a whole pixel range as result because we know it covers a single value.
-    \item subsequent joins of compressed raster data.
-    \item No sorting step for our pixel ranges.
-\end{itemize}
 
 \subsubsection{\kraster search comparison}
 \label{sec:k2searchcomparison}
@@ -378,11 +368,46 @@ As mentioned in section \ref{sec:extract-cells}, we came up with a modification 
 
 As seen in figure \ref{fig:old-vs-new}, The version of \raven using our new \textit{extractCells} method performs better than the old version overall, and significantly better on the \textit{Small Woody Features} raster dataset. One possible explanation for why \textit{Small Woody Features} is such an outlier is that that raster dataset has tiles that cover very small areas. This means that each tile will overlap with few geometries and for that reason it will have fewer pixel-ranges next to each other horizontally.
 
+\subsubsection{Selectivity}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{images/05evaluation/results/synthetic/Join Time - Selectivity .png}
+    \caption{Join times for filters with different levels of selectivity.}
+    \label{fig:filter-selectivity}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{images/05evaluation/results/synthetic/Vector Density .png}
+    \caption{Join time as a function of the number of the area covered by the vector data. }
+    \label{fig:vector-density}
+    \end{subfigure}
+\end{figure}
+
+
+In figure \ref{fig:filter-selectivity}, we see that selecting everything performs the same as getting no results. This is due to the fact that each pixel range can be directly added to the results once the value has been accessed from the \kraster. In this scenario, there are pixel ranges that span across the whole image and there is only one pixel range per row in the image. The low selectivity gains performance as there are fewer results to be collected. At 50\% selectivity, the algorithm has to search a bit in the \kraster and at the same time there will be more pixel ranges in total. 
+
+Figure \ref{fig:vector-density} shows that the join time of \ravenjoin depends on the spatial selectivity. This makes sense, since having a larger overlap between vector and raster data produces more results and therefore takes longer. The shape of the graph can be explained by the fact that the number of ranges created depends mainly on the height of each vector shape. This height grows with the square root of the spatial selectivity in our tests. Hence, the graph resembles a square root function.
+
+
+factors that make us gain performance
+\begin{itemize}
+    \item our cached and compressed index.
+    \item we can return a whole pixel range as result because we know it covers a single value.
+    \item subsequent joins of compressed raster data.
+    \item No sorting step for our pixel ranges.
+\end{itemize}
+
 \subsubsection{Cache building times}
 \label{sec:cache-building-times}
 
- \begin{figure}[H]
-    \centering
+To give a perspective of the one time cost of building the cache, we can take a look at the total creation time for the datasets. In figure \ref{fig:cache-build-write} the whole cache is built for all the raster data used in the evaluation and even though it takes a long time, it is only about the double of a single \raptorjoin of the same raster comparing to figure \ref{fig:res-boundaries-no-filter}.
+
+\begin{figure}[H]
+\centering
     \includegraphics[width=0.5\textwidth]{images/05evaluation/results/misc/Cache Build & Write Times .png}
     \caption{Time taken to build \& write the cache for all raster sets.}
     \label{fig:cache-build-write}
@@ -405,7 +430,7 @@ Since the search performance of the \rtree is impacting the join time, we want t
 \\ \hline  
          Proteccted Areas&  26.68\%&  40.11\% & 25.82\%
 \\ \hline  
-         Woody&  25.05\%&  27.48\%& 25.24\%
+         SWF (vector)&  25.05\%&  27.48\%& 25.24\%
 \\ \hline 
     \end{tabular}
     \caption{Overlap ratio for different types of r-trees with 3 different vector datasets. The minimum and maximum sub nodes for the r-tree nodes are 2 and 8 respectively.}
@@ -422,18 +447,7 @@ Since the search performance of the \rtree is impacting the join time, we want t
 There are two separate uses of the \rtree in the system. The first one is an outer tree that contains all the vector data and is queried by the raster tiles to retrieve the shapes within the tile bounds. The retrieved shapes will be added to a new inner \rtree that is used for the join algorithm. The effect of using various types of \rtree as the outer tree can be seen in figure \ref{fig:outer-r-tree}. The overlaps of the \str are not as good as the \rstar tree (see table \ref{tab:overlap_ratio}), but the building time is much faster for the \str, which more than makes up for the time lost on the worse overlap in most cases.
 
 The type of the inner \rtree has a smaller impact on performance. We ran multiple benchmarks and computed that the average time taken to complete all of them. The \str came out on top, being 4.5\% faster than an \rtree. The \rstar, on the other hand, performed 6.6\% worse than the \rtree. If we instead compute the average relative difference compared to an \rtree the \str performs just 0.1\% worse on average, whereas the \rstar performs 6.2\% worse.
-The plots for each run can be seen in appendix \ref{sec:inner-r-tree}.
-
-\subsubsection{Memory}
-\label{sec:memory}
-\begin{figure}[H]
-    \centering
-    \includegraphics[height=6cm]{images/05evaluation/results/misc/memcomparison.png}
-    \caption{Comparison of memory consumption for a join with SWF (raster, 2 images) and Boundaries.}
-    \label{fig:memcomp}
-\end{figure}
-
-\todo[inline]{write explanation of memory result}
+The plots for each run can be seen in appendix \ref{sec:inner-r-tree}. These experiments prompted us to rerun all the experiments involving real data again using an \str instead of the \rstar we had been using. These results, however, showed no clear advantage for either of them. Therefore, we concluded using an \rstar tree as the inner tree did not harm our performance in the benchmarks. These results can be found in appendix \ref{app:r-tree-comparison}.
 
 \subsection{Result summary}
 \todo[inline]{Write result summary}

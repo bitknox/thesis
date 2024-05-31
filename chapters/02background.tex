@@ -1,23 +1,28 @@
 \section{Background} \label{sec:background}
 
 \subsection{Raster Data}
-\begin{itemize}
-    \item what is raster data
-\end{itemize}
 
-Raster data is data laid out in grids of given dimensions where each cell or pixel holds a value \cite{GIS-Essentials}. Typically this is a 2D grid of values and in the context of geographical data, this represents an area of the earth. The raster data can be referenced as an image of rows and columns and size of the image is how many rows and columns there are. For simplicity, the size is a width and a height.
+Raster data is data laid out in grids of given dimensions where each cell or pixel holds a value \cite{GIS-Essentials}. Typically this is a 2D grid of values and in the context of geographical data, this represents an area of the earth. The raster data can be referenced as an image of rows and columns and size of the image is how many rows and columns there are. See figure \ref{fig:raster-model} for an example. For simplicity, the size is a width and a height.
 To map the raster data to the face of the earth, metadata is added with transformation and projection information. In combination it is possible to tell what area the whole raster data covers. Given the width and height and the physical area, the discrete cells have certain lengths of meters. This is also referred to as the resolution. A relatively small resolution would be in kilometers and high resolutions are in meters. It might become obvious that if the resolution is one meter, the size of the data grows quite rapidly in proportion with the area the set covers.
 
-\todo[inline]{Extend raster explanation with a figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[height=5cm]{images/02background/raster_dataset.png}
+    \caption{Illustration of the raster model. Source: \url{https://docs.qgis.org/3.34/en/docs/gentle_gis_introduction/raster_data.html\#id1}}
+    \label{fig:raster-model}
+\end{figure}
+
 
 \subsection{Vector Data}
-\begin{itemize}
-    \item what is vector data
-\end{itemize}
 
-At a basic level, the vector data model is defined as points of X and Y coordinate pairs \cite{GIS-Essentials}. Each point represent a location on the earth and whole vector dataset can easily cover the whole earth with a few points. This makes the vector model much smaller compared to the raster model. On the other hand, vector data cannot be used for much else than to define an area. Connecting the points will form lines which can be connected to form polygons that are enclosed shapes. On the basis of polygons always being closes we can say that a horizontal line crossing through the polygon, it must intersect an even number of times. 
+At a basic level, the vector data model is defined as points of X and Y coordinate pairs \cite{GIS-Essentials}. Each point represent a location on the earth and whole vector dataset can easily cover the whole earth with a few points. This makes the vector model much smaller compared to the raster model. On the other hand, vector data cannot be used for much else than to define an area. Connecting the points will form lines which can be connected to form polygons that are enclosed shapes (See figure \ref{fig:vector-model}. On the basis of polygons always being closes we can say that a horizontal line crossing through the polygon, it must intersect an even number of times. 
 
-\todo[inline]{Expand vector explanation with a figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[height=5cm]{images/02background/polygon_feature.png}
+    \caption{Illustration of the vector model. Source: \url{https://docs.qgis.org/3.34/en/docs/gentle_gis_introduction/vector_data.html\#id4}}
+    \label{fig:vector-model}
+\end{figure}
 
 \subsection{Spatial Joins}
 \begin{itemize}
@@ -35,7 +40,6 @@ To join raster and vector data, it is important that the projections of the data
 
 \subsubsection{\beast}
 \beast is a state-of-the-art system that can join raster and vector data on a distributed level. It utilizes the \raptorjoin algorithm to do this. \beast contains the implementation of \raptorjoin that we are going to compare our method to.
-\todo[inline]{Expand \beast explanation, we might }
 
 \raptorjoin is designed to do distributed raster and vector joins by pixel ranges that are contained within the vector shapes. These ranges can then be used as scan lines to read the exact pixels that are needed for the join. The join only uses the metadata to create the pixel ranges which means the raster data is not read before it is strictly necessary. ...
 \todo[inline]{Go more into depth}

@@ -1,11 +1,5 @@
 \section{Introduction} \label{sec:intro}
 
-\begin{itemize}
-    \item this is a continuation of our research project
-    \item mention the major improvements over the \raven from our research project 
-    \item mention the components of the system (overview)
-\end{itemize}
-
 In \citetitle{rastervectorstudy} \cite{rastervectorstudy} some of the important use cases of raster and vector joins are highlighted such as preventing wildfires. Zones of interest are created with vector data, to focus the view of tons of satellite images. New datasets that are more comprehensible and manageable are possible with joins of large raster and vector datasets. The problem is how to process this large quantity of data in a feasible way. A few methods have been developed to tackle this problem over the recent years. The common approach is to join one vector dataset with one raster dataset as fast as possible. However, it would require an equal amount of work to join with a new vector dataset with the same raster data because it cannot be kept in memory. It would not be hard to imagine that the zones could undergo iterations that would require additional joins. We want to explore the use of data structures to make consecutive raster and vector joins faster in the context of a system.
 
 %NEW

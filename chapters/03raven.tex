@@ -1,36 +1,43 @@
 \section{\raven} \label{sec:raven}
-\todo[inline]{Write general introduction}
-\subsection{Data Loading}
-\todo[inline]{Mention something about input}
+\raven is a system for computing and visualising raster-vector spatial joins. It uses an algorithm named \ravenjoin, which is a modified version of the algorithm described in \citetitle{k2rasterjoin} by \citet{k2rasterjoin}. It differentiates itself from the state-of-the-art system by being able to efficiently filter results based on raster values.
+
+This section describes the different components of \raven. We first describe the data structures that serve as a foundation of the \ravenjoin algorithm. This is followed up by a description of the system, including data loading, the \ravenjoin algorithm, and visualizer.
+
 \subsection{Data Structures}
-\begin{itemize}
-    \item \kraster
-    \item \rstar
-\end{itemize}
 
+\paragraph{\kraster} 
+In order to efficiently filter values, \ravenjoin needs to be able to quickly retrieve information about all values present in some sub-matrix of the raster data. This is because it should be able to disregard large parts of the raster data if none of the values it contains are matched by the filter.
 
-\paragraph{r-tree} To query the vector data efficiently in a given area, a spatial index is used. One of the most common indices, is an r-tree \cite{rtree}.
+The \kraster data structure is a tree where every node corresponds to some part of the raster data. Nodes store the range of values present in the corresponding part. The root node of the tree corresponds to the entire image. Each node has $k^2$ children corresponding to equally-sized portions of the image from their parent. $k$ is a constant parameter chosen before building the data structure, it affects the size of the data structure and the time taken to build and query it. A \kraster tree can be queried about what range the values in a portion of the image has, as long as that portion has a corresponding node in the tree. If it does not, it is possible to combine queries of multiple nodes to achieve the desired result. The \kraster data structure also has the advantage that it compresses the image data considerably. An example of how an image can be converted to a tree storing value ranges can be seen in figure \ref{fig:k2raster-structure}.
+
+To further reduce the size of the \kraster, instead of storing the ranges directly, they are stored as differences between the node in question and its parent. Specifically, each node will still store two numbers. One denoting how much larger the minimum value of its part of the data is compared to that of its parent. The other denoting how much smaller the maximum value is. In itself, this does not help much as it still needs to store 2 numbers. The improvement is caused by the fact that these values are further compressed using the DAC encoding \cite{DAC}. DAC compresses small values significantly better than large values. Storing differences instead of the ranges themselves help reduce the size of each number and therefore allows the DAC encoding to compress the data more.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/03method/k2tree.drawio-v2.png}
+    \caption{Example of how a raster image can be compressed using the \kraster data structure. The figure is adapted from the paper \citetitle{k2raster} by \citet{k2raster}}
+    \label{fig:k2raster-structure}
+\end{figure}
+
+\paragraph{\rtree} To query the vector data efficiently in a given area, a spatial index is used. One of the most common indices, is an \rtree \cite{rtree}. The data structure groups spatial data in close proximity given their Minimum Bounding Rectangle (MBR). Region search queries traverse the overlapping nodes in the tree. 
 \todo[inline]{Explain r-tree}
 
 The \rstar \cite{rstartree} variant improves the search time of the tree by minimizing the overlaps of the nodes at the cost of longer build time. The vector data is loaded in as polygons that get inserted into the \rstar, one by one. It is also possible to bulk load the vector data with Sort Tile Recursive \cite{str} (STR) and Overlap Minimizing Top-down \cite{omt} (OMT), which is beneficial for large vector datasets. We are going use a library that can do STR bulk loading and create the \rstar variant. Ideally, we would do STR loading with r-star nodes, but this was not available with the library we use.
 
-\paragraph{\kraster} \todo[inline]{Explain \kraster}
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.8\textwidth]{images/03method/k2tree.drawio.png}
-    \caption{Example of how a raster image can be compressed using the \kraster data structure. The figure is adapted from the paper \textit{Scalable and queryable compressed storage structure for raster data} by Susana Ladra et al.\cite{k2raster}}
-    \label{fig:enter-label}
-\end{figure}
+\subsection{Data Loading}
+To compute spatial joins \raven needs to support both vector and raster data formats. To limit the scope, we only support the following: esri formatted shapefiles\footnote{} and GeoTiff\footnote{}. For GeoTiff we support both inlined and sidecar World File information.
+\todo[inline]{Mention something about input}
 
 \subsection{Join Algorithm}
 
-\ravenjoin is based on an algorithm described in \citetitle{k2rasterjoin} by \citet{k2rasterjoin}. The main differences between that algorithm and \ravenjoin are
+As mentioned, \ravenjoin is based on the algorithm described in \citetitle{k2rasterjoin}. The main differences between that algorithm and \ravenjoin are
 \begin{itemize}
 \item To make the approach work in practice we added the ability to split up images into smaller tiles each with its own \rstar and \kraster tree.
 \item It is mentioned in the paper that a refinement step is needed to reduce it to just one list, but not how to do this. We have implemented this refinement using \kraster search functions based on the ones described in \citetitle{k2raster} by \citet{k2raster}.
-\item We use a modified version of the search functions described in \citetitle{k2raster}. The new version of these functions allow us to search the \kraster tree much faster.
-\item more powerful filter functionality in the join algorithm
+\item In the paper, they describe the need for an \textit{extractCells} method, but they do not provide such a method. For searching the \kraster we use a modified version of the search functions described in \citetitle{k2raster}. The new version of these functions allow us to search the \kraster tree much faster.
+\item in the part of our implementation corresponding to \textit{extractCells}, we need to find pixels that overlap with the vector data before applying the filter. To do this, we use a modified version of \beast's \textit{extractCells}.
+\item More powerful filter functionality in the join algorithm
+\item Instead of just an algorithm \raven is a system which contain a few additional features. For example, the visualiser.
 \end{itemize}
 
 \subsubsection{Overview}
@@ -44,7 +51,6 @@ If some values of the range match the filter and some don't, the algorithm has t
 
 A flowchart of this central part of the algorithm can be seen in figure \ref{fig:join-flow-chart}.
 
-\todo[inline]{simplify figure (remove stack and such)}
 \begin{figure}[H]
     \centering
     \includegraphics[width=1.0\textwidth]{images/03method/join flow chart.png}
@@ -329,13 +335,6 @@ in the worst case, under the assumptions mentioned. There is therefore at least 
 To achieve out of core execution we partition the raster data into fixed sized squares. We can then process one square at a time without having the rest of them loaded in memory. This means it is important that the raster data is only read in these same portions for each partition. Since we know the bounds of the tiles, we can exclude vector data for each tile before the join. For any given values of $k$ in the \kraster, the optimal tile size will be a power of $k$. At the same time small tile sizes will accumulate too much overhead. The tiles are the initializing point of a stream that can be parallelized. The tiles will receive their own raster readers that work on an independent level, which does not need synchronization.
 This approach also allows \raven to use almost no memory other than what is needed to store the vector data. The effects of this are examined in section \ref{sec:memory}.
 
-
-\begin{itemize}
-    \item Tiling approach
-    \item Streaming of matrices
-    \item Only looks at vector shapes that might overlap with the tile
-    \item translating vector coordinates to tiles
-\end{itemize}
 
 \subsubsection{Caching}
 The approach of creating fixed-sized partitions of the raster data allows the data structures to be cached in a replacing fashion in the sense that the cache can be created partially as needed. The logical coverage of each cache makes it easy to manage the reusability of the cache. If the data structures were created from the least required raster data for one join, it could require more work to create the uncached raster.
