@@ -6,7 +6,7 @@ This section describes the different components of \raven. We first describe the
 \subsection{Data Structures}
 
 \paragraph{\kraster} 
-In order to efficiently filter values, \ravenjoin needs to be able to quickly retrieve information about all values present in some sub-matrix of the raster data. This is because it is be able to disregard large parts of the raster data if none of the values it contains are matched by the filter.
+In order to efficiently filter values, \ravenjoin needs to be able to quickly retrieve information about all values present in some sub-matrix of the raster data. This is because it is able to disregard large parts of the raster data if none of the values it contains are matched by the filter.
 
 The \kraster data structure is a tree where every node corresponds to some part of the raster data. Nodes store the range of values present in the corresponding part. The root node of the tree corresponds to the entire image. Each node has $k^2$ children corresponding to equally-sized portions of the image from their parent. $k$ is a constant parameter chosen before building the data structure, it affects the size of the data structure and the time taken to build and query it. A \kraster tree can be queried about what range the values in a portion of the image has, as long as that portion has a corresponding node in the tree. If it does not, it is possible to combine queries of multiple nodes to achieve the desired result. The \kraster data structure also has the advantage that it compresses the image data considerably. An example of how an image can be converted to a tree storing value ranges can be seen in figure \ref{fig:k2raster-structure}.
 
