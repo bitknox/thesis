@@ -1,8 +1,16 @@
-\section{Conclusion \& Future work} \label{sec:conclusion}
+\section{Conclusion \& Future Work}
+\label{sec:conclusion-future-work}
+In this section we will conclude the report and give directions to what future work might be. 
+
+\subsection{Conclusion}
+\label{sec:conclusion}
 \begin{itemize}
     \item reflection on results
+    \item average differences between us and beast
+    \item filtering is fast
+    \item result types
+    \item low memory consumption
     \item comparison with existing systems
-    \item Possible future work
 \end{itemize}
 \todo[inline]{Finish conclusion}
 \subsection{Future Work}
@@ -11,6 +19,4 @@ In \citet{k2raster} there is a hybrid version of the \kraster that improves comp
 
 We think that it is possible to compress the result even more because sometimes the pixel ranges start and stop at the position in the horizontal axis. If it is possible to create one large rectangle instead of individual lines, we could save a great deal of work. This is mostly going matter for raster data with large areas of the same values. When the system is in the routine of finding the pixel ranges, it will know what \kraster node it has to join within. And with that, it follows what the maximum and minimum values lie within this node. Therefore we can skip further traversal of the \kraster if all the values of the node is the same.
 
-Using the metadata of all the raster data, we should be able to partition the vector data without building a \str. This would also allow the vector data to be read in parallel because each polygon only has to be added to the correct partitions. This would require synchronization because the collections for each partition would need to be shared between threads. 
-
-\todo[inline]{we could modify the K2-raster slightly to allow filters on multiple samples to be faster than currently possible}
+Using the metadata of all the raster data, we should be able to partition the vector data without building a \str. This would also allow the vector data to be read in parallel because each polygon only has to be added to the correct partitions. This would require synchronization because the collections for each partition would need to be shared between threads.

@@ -19,14 +19,23 @@ To further reduce the size of the \kraster, instead of storing the ranges direct
     \label{fig:k2raster-structure}
 \end{figure}
 
-\paragraph{\rtree} To query the vector data efficiently in a given area, a spatial index is used. One of the most common indices, is an \rtree \cite{rtree}. The data structure groups spatial data in close proximity given their Minimum Bounding Rectangle (MBR). Region search queries traverse the overlapping nodes in the tree. 
-\todo[inline]{Explain r-tree}
+\paragraph{\rtree} To query the vector data efficiently in a given area, a spatial index is used. One of the most common indices, is an \rtree \cite{rtree}. The data structure groups spatial data in close proximity given their Minimum Bounding Rectangle (MBR). Region search queries traverse the overlapping nodes in the tree which quickly excludes a lot of data with no overlap from the search.
 
-The \rstar \cite{rstartree} variant improves the search time of the tree by minimizing the overlaps of the nodes at the cost of longer build time. The vector data is loaded in as polygons that get inserted into the \rstar, one by one. It is also possible to bulk load the vector data with Sort Tile Recursive \cite{str} (STR) and Overlap Minimizing Top-down \cite{omt} (OMT), which is beneficial for large vector datasets. We are going use a library that can do STR bulk loading and create the \rstar variant. Ideally, we would do STR loading with r-star nodes, but this was not available with the library we use.
+The \rstar \cite{rstartree} variant improves the search time of the tree by minimizing the overlaps of the nodes at the cost of longer build time. The vector data is loaded in as polygons that get inserted into the \rstar, one by one. It is also possible to bulk load the vector data with Sort Tile Recursive \cite{str} (STR) and Overlap Minimizing Top-down \cite{omt} (OMT), which is beneficial for large vector datasets. We are going use a library that can do STR bulk loading and create the \rstar variant. Ideally, we would do STR loading with \rstar nodes, but this was not available with the library we use.
 
 \subsection{Data Loading}
-To compute spatial joins \raven needs to support both vector and raster data formats. To limit the scope, we only support the following: esri formatted shapefiles\footnote{} and GeoTiff\footnote{}. For GeoTiff we support both inlined and sidecar World File information.
-\todo[inline]{Mention something about input}
+To compute spatial joins \raven needs to support both vector and raster data formats. To limit the scope, we only support the following: esri formatted shapefiles\footnote{\url{https://www.esri.com/content/dam/esrisites/sitecore-archive/Files/Pdfs/library/whitepapers/pdfs/shapefile.pdf}} and GeoTiff\footnote{\url{https://www.loc.gov/preservation/digital/formats/fdd/fdd000279.shtml}}. For GeoTiff we support both inlined and sidecar World File information. The entire vector set is loaded into a \str. This is done using a single thread, which means that reading the vector set can become a bottleneck if the set becomes too large, especially in cases where the vector set is larger than the raster set. 
+
+This initial index is used to decide whether there is an overlap between a raster tile bounds and any of the geometries. If no such overlap is found, we are able to discard the entire raster tile and avoid building \kraster. If there is an overlap, the tile is selected for further processing. The first step of the processing is to transform the vector data, such that it uses a common coordinate reference system. 
+
+Once this transformation is done, a new tree is built using the transformed geometries. To further reduce memory, each raster tile is split into subtitles of a configurable size. This allows for only keeping very small amounts of raster data in memory at one time, while sacrificing speed. A measurement of this can be found in section \ref{sec:memory}. At this point, raster data is read and \kraster structures are built and paired with the accompanying geometries that were found to be overlapping. Figure \ref{fig:k-raster-r-tree-overlap} shows this pairing visually. The red shapes are polygons while the blue boxes are \rstar MBR outlines. The grey boxes represent \kraster nodes.\footnote{The boxes are only drawn to level 14 of the tree to prevent visual clutter} As expected, areas where pixels have the same value are more sparse. E.g. the water around Denmark.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/03method/datastructures_denmarkv2.png}
+    \caption{Example of an aligned \kraster and \str that is passed to the join.}
+    \label{fig:k-raster-r-tree-overlap}
+\end{figure}
 
 \subsection{Join Algorithm}
 
@@ -41,7 +50,7 @@ As mentioned, \ravenjoin is based on the algorithm described in \citetitle{k2ras
 \end{itemize}
 
 \subsubsection{Overview}
-\ravenjoin is a raster-vector spatial join algorithm. It has support for filtering based on raster values faster than conventional join algorithms that first generate all results and then filter them. The system supports a basic input of TIFF with side-car files, GeoTIFF and shapefile files. A join is created for each combination of raster and vector files. Specifically for the vector data, \ravenjoin only supports polygons. The initial step of \ravenjoin is to build the required data structures. The first data structure we build is an STR bulk-loaded r-tree. We use this tree to determine what vector data overlaps with a given tile of raster data. To make this work, we have to convert the rectangle describing the area of the given raster tile from the raster data CRS to that of the vector data. The vector data that lies within the bounds will be copied and then projected to the raster data's CRS. Raster bounds that has no intersecting vector data can be skipped. This means the raster data only gets indexed as it is needed for a join. The indices that get created will get stored to disk such that the consecutive joins of the same area, it will use the cached indices instead. 
+\ravenjoin is a raster-vector spatial join algorithm. It has support for filtering based on raster values faster than conventional join algorithms that first generate all results and then filter them. The system supports a basic input of TIFF with sidecar files, GeoTIFF and shapefile files. A join is created for each combination of raster and vector files. Specifically for the vector data, \ravenjoin only supports polygons. The initial step of \ravenjoin is to build the required data structures. The first data structure we build is an STR bulk-loaded \rtree. We use this tree to determine what vector data overlaps with a given tile of raster data. To make this work, we have to convert the rectangle describing the area of the given raster tile from the raster data CRS to that of the vector data. The vector data that lies within the bounds will be copied and then projected to the raster data's CRS. Raster bounds that has no intersecting vector data can be skipped. This means the raster data only gets indexed as it is needed for a join. The indices that get created will get stored to disk such that the consecutive joins of the same area, it will use the cached indices instead. 
 
 Next, an \rstar is created for every tile, containing the vector data that overlaps with it. Each tile of raster data is converted to a \kraster tree and it is passed to the join algorithm along with its corresponding \rstar.
 
@@ -53,13 +62,13 @@ A flowchart of this central part of the algorithm can be seen in figure \ref{fig
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1.0\textwidth]{images/03method/join flow chart.png}
+    \includegraphics[width=0.8\textwidth]{images/03method/join flow chart.png}
     \caption{A flowchart of the outer routine in the join algorithm \ravenjoin.}
     \label{fig:join-flow-chart}
 \end{figure}
 
 \subsubsection{Filtering}
-One of the main differences between \raven and \beast is that \raven has greater support for joins that filter the result based on pixel-values. We will define a filter as a function that accepts certain pixel values only. When a filter is applied to a join it means that the result of the join will be only the pixels whose values are matches the predicate of the filter and overlap with the vector data.
+One of the main differences between \raven and \beast is that \raven has greater support for joins that filter the result based on pixel values. We will define a filter as a function that accepts certain pixel values only. When a filter is applied to a join it means that the result of the join will be only the pixels whose values are matches the predicate of the filter and overlap with the vector data.
 
 In \raven, the filter is pushed far down in the join algorithm, making it possible to disregard pixels that will be filtered away earlier. This is a feature of the \kraster nodes of the data structure correspond to an area given the node depth. The nodes contain a minimum and maximum value than can be checked any time in the join. In \beast, no such functionality exists, this means that the only way to apply a filter on the join is to first compute the full join, then filter the result. 
 
@@ -73,7 +82,7 @@ The pushing down of the filter is accomplished by querying the \kraster tree for
 
 The range filter can be implemented in \raven as a filter that for a queried interval $[x_1,x_2]$ returns $x_1 \leq hi \wedge lo \leq x_2$ for check (1) and $x_1 < lo \vee x_2 > hi$ for (2).
 
-In \citetitle{k2rasterjoin} by \citet{k2rasterjoin}, which is the paper our system is based on, only filters of this kind are supported. Our more abstract way of implementing these filters allows us to have more control over which values should be accepted. For example, without changing anything other than which filter object is used, we could easily accept values that fall within one of 2 or more given ranges, by simply composing multiple of these filters with 'or' operations. If many ranges are needed to match all the values we want, an interval tree can be used to give a query time of $O(log(n))$, where $n$ is the number of ranges. Alternatively, if the number of bits used by the pixels is not too high, a prefix-sum-array can easily be used to filter values in constant time.
+In \citetitle{k2rasterjoin} by \citet{k2rasterjoin}, which is the paper our system is based on, only filters of this kind are supported. Our more abstract way of implementing these filters allows us to have more control over which values should be accepted. For example, without changing anything other than which filter object is used, we could easily accept values that fall within one of 2 or more given ranges, by simply composing multiple of these filters with 'or' operations. If many ranges are needed to match all the values we want, an interval tree can be used to give a query time of $O(log(n))$, where $n$ is the number of ranges. Alternatively, if the number of bits used by the pixels is not too high, a prefix sum array can easily be used to filter values in constant time.
 
 Applying a special filter that applies a separate filter for each sample is also possible using a filter function. This can save time over the more naive approach of filtering based on a range that encompasses all the wanted values and then manually filtering the results afterwards. The reason it is faster is not that it saves time on lookups in the \kraster tree, but rather that it produces fewer results initially and avoids the final iteration over the results to further filter them.
 
@@ -92,7 +101,7 @@ This is a slower version of the previous method. The goal of this method is to f
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{images/03method/checkMBR.png}
+    \includegraphics[width=\textwidth]{images/03method/checkMBR.png}
     \caption{Example showing which \kraster nodes would be examined to determine the minimum and maximum values. The method would examine the values of the blue nodes(e.g. nodes that are contained within the MBR of the polygon)}
     \label{fig:check-mbr}
 \end{figure}
@@ -108,7 +117,7 @@ This is a slower version of the previous method. The goal of this method is to f
 \end{itemize}
 This result type is the slowest. This type requires that for each pixel, an object is created and included in the result list. It is also the type that most closely matches the result type of the \raptorjoin algorithm.
 
-\paragraph{RangeValues} The range-value result type encodes the same information as the value type above, but instead of individual pixels in the list, it has ranges of pixels that have the same values. A range consists of a row number, a start and stop column, and a value for that range. Using this type, areas that have identical pixel values, are compressed into fewer pixel ranges. Figure \ref{fig:result-type} shows these ranges in a join between GLC2000 \& boundaries. Pixels that have a similar shade, are part of a range with the same length with the exception of the background colour.
+\paragraph{RangeValues} The range value result type encodes the same information as the value type above, but instead of individual pixels in the list, it has ranges of pixels that have the same values. A range consists of a row number, a start and stop column, and a value for that range. Using this type, areas that have identical pixel values, are compressed into fewer pixel ranges. Figure \ref{fig:result-type} shows these ranges in a join between GLC2000 \& boundaries. Pixels that have a similar shade, are part of a range with the same length with the exception of the background colour.
 
 \begin{figure}[H]
     \centering
@@ -129,7 +138,7 @@ This result type is the slowest. This type requires that for each pixel, an obje
 In \citetitle{k2rasterjoin}, the join operation described produces a list of probable results and one of definite results. They describe that in order to reduce this to one list of results, a \textit{refinement step} is needed. In this step, each geometry in the probable result list, is examined more closely to find all pixels within them that match the filter. This step is not described further in their paper.
 In \citetitle{k2raster}, methods are provided to efficiently extract values from the \kraster tree. The most interesting one of these is the one they call \textit{searchValuesInWindow}. It takes as input, a rectangle and returns all pixels within this rectangle that matches the filter. It saves time over getting all pixel values within the window and then using the filter to discard pixels. It uses the filter during the search to avoid exploring parts of the \kraster tree that do not match the filter.
 
-Our initial approach to find all the results, was to first produce both the definite and probable results list like they mention in the paper. Both lists contain pixel-ranges that overlap with some polygon. We would then go through all pixel-ranges in the probable list and use the \textit{searchValuesInWindow} method on each row to get only the pixels that match the filter.
+Our initial approach to find all the results, was to first produce both the definite and probable results list like they mention in the paper. Both lists contain pixel ranges that overlap with some polygon. We would then go through all pixel ranges in the probable list and use the \textit{searchValuesInWindow} method on each row to get only the pixels that match the filter.
 
 A slight improvement to this method was made by only producing one list and performing the last step mentioned above immediately when we would have otherwise added the ranges to the probable results list. This saves time, since we can avoid an additional iteration over all results in the probable results list.
 
@@ -139,27 +148,27 @@ To save time on node lookups, we came up with the idea of giving multiple ranges
 
 Instead, we came up with the idea of making multiple calls to \textit{searchValuesInRanges} where at most one range per row is included in each call. This allows us to use a $k$-ary segment tree that can be built quickly and answer queries about the horizontal span of ranges. Queries that contain only ranges within the rows used by a given \kraster node can be answered in constant time. This span can then be used to determine whether the \kraster node overlaps with at least one of the given ranges.
 
-To only give the method one range per row at most, we split the ranges into what we call \textit{layers}. The first layer contains the first pixel-range from all rows that have one. The second layer contains the second pixel-range from all rows that have at least 2 ranges, and so on. The total number of layers is therefore determined by the number of ranges in the most populated row.
+To only give the method one range per row at most, we split the ranges into what we call \textit{layers}. The first layer contains the first pixel range from all rows that have one. The second layer contains the second pixel range from all rows that have at least 2 ranges, and so on. The total number of layers is therefore determined by the number of ranges in the most populated row.
 
-At each node, the tree stores the minimum and maximum x-value of the ranges present in the corresponding sub-tree. The tree is built by starting at the leaves, where each node that has a range present will be updated to the start and end x-value of that range. For every other node, the start value of it will be the minimum start value of its $k$ children, and the end value will be the maximum of their end values. A node may also have no ranges contained in it, in this case we use infinity as the start value and -infinity as the end, this way, it is not a valid range, and will not influence any of the values in its parent. An illustration of a tree can be seen in figure \ref{fig:range-tree}.
+At each node, the tree stores the minimum and maximum x-value of the ranges present in the corresponding subtree. The tree is built by starting at the leaves, where each node that has a range present will be updated to the start and end x-value of that range. For every other node, the start value of it will be the minimum start value of its $k$ children, and the end value will be the maximum of their end values. A node may also have no ranges contained in it, in this case we use infinity as the start value and negative infinity as the end, this way, it is not a valid range, and will not influence any of the values in its parent. An illustration of a tree can be seen in figure \ref{fig:range-tree}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{images/03method/range tree.pdf}
-    \caption{An illustration of how pixel-ranges are converted to a range tree. Note that only the tree for the first layer is shown. A second tree would be made for the second ranges in rows 3 and 5. The value of $k$ for this tree is 2.}
+    \caption{An illustration of how pixel ranges are converted to a range tree. Note that only the tree for the first layer is shown. A second tree would be made for the second ranges in rows 3 and 5. The value of $k$ for this tree is 2.}
     \label{fig:range-tree}
 \end{figure}
 
 With this tree, it is still possible that a \kraster tree node falls within the span described by the segment tree without containing any ranges itself. For this to happen, however, one row would have to contain a range all the way on the left side of the raster data, and the very next row has to contain only one range at the very right of the raster data. This will also have to happen multiple times for it to slow down the algorithm significantly. Note that it can only happen if the vector data happens to lie just outside the raster tile on at least 3 sides and only intersects it on one side at a time alternating between the left and right side. We will assume that this happens rarely enough that it has no significant impact on performance.
 
-Pseudocode for the extractCells sub-routine can be found in Algorithm \ref{alg:extractCells}.
+Pseudocode for the extractCells subroutine can be found in Algorithm \ref{alg:extractCells}.
 \begin{figure}[H]
 \begin{algorithm}[H]
 \caption{\textbf{extractCells}($P$,$pk$) finds all pixels inside a \kraster tree node $pk$ that are contained in a polygon $P$.}\label{alg:extractCells}
 $intersections \gets (\emptyset \colon y \in [1..|pk|])$\\
 $oldPoint \gets P_{|P|}$\\
 \For{$point \in P$}{
-    \Comment*[r]{Compute the standard form \\ of the line-segment $(point, oldPoint)$}
+    \Comment*[r]{Compute the standard form \\ of the line segment $(point, oldPoint)$}
     $a \gets (point_y - oldPoint_y)$\\
     $b \gets (oldPoint_x - point_x)$\\
     $c \gets a \times oldPoint_x + b \times oldPoint_y$\\
@@ -201,7 +210,7 @@ $queryTrees \gets \text{segment tree of range span for each layer}$\\
 
 \Return{out}
 \end{algorithm}
-\caption*{Note that $intersections$ is used as a tuple of multi-sets, hence the set-builder notation on line 21 is used to count the number of appearances of a number $i$ in the $y^{th}$ multi-set in $intersections$.}
+\caption*{Note that $intersections$ is used as a tuple of multisets, hence the set builder notation on line 21 is used to count the number of appearances of a number $i$ in the $y^{th}$ multiset in $intersections$.}
 \end{figure}
 
 \begin{figure}[H]
@@ -271,14 +280,14 @@ t_{old} \approx k*q*m
 \label{equation:old-running-time}
 \end{equation}
 
-With the new approach, we will have to make sure we don't explore parts of the matrix that don't contain any pixel-ranges. To do this, we use the segment tree explained earlier. Building this tree takes time $t_{tree}$.
+With the new approach, we will have to make sure we don't explore parts of the matrix that don't contain any pixel ranges. To do this, we use the segment tree explained earlier. Building this tree takes time $t_{tree}$.
 
 \begin{equation}
 t_{tree} = \sum_{i=0}^{log_k(n)} n/k^i = k(n-1)/(k-1) < 2*n
 \label{equation:tree-build-time}
 \end{equation}
 
-We do however save some time not having to go from the root of the \kraster tree for every new range. The reason for this is that even if new ranges are placed in the most malicious row possible, the method will be able to reuse some higher \kraster nodes for most of the ranges. Only the first $k^2$ ranges added to the list will take the full $k*q$ time. The next $k^2 (k^2-1)$ in the worst case will save at least one lookup each, since each of the recursive calls at the first level would be able to reuse a node. The next $k^4 (k^2-1)$ ranges will save at least two look-ups. In general, the $i$-th range added will take time approximately $k*q-log_{k^2}(i) + 1$ at worst, where $log_{k^2}(i) - 1$ is a lower bound on the number of node look-ups we can save. Note that this is quite a pessimistic lower bound, as it is unlikely that the ranges will be placed in the worst way possible. It is much more likely that the ranges will be placed next to each other, in which case the savings are even greater.
+We do however save some time not having to go from the root of the \kraster tree for every new range. The reason for this is that even if new ranges are placed in the most malicious row possible, the method will be able to reuse some higher \kraster nodes for most of the ranges. Only the first $k^2$ ranges added to the list will take the full $k*q$ time. The next $k^2 (k^2-1)$ in the worst case will save at least one lookup each, since each of the recursive calls at the first level would be able to reuse a node. The next $k^4 (k^2-1)$ ranges will save at least two lookups. In general, the $i$-th range added will take time approximately $k*q-log_{k^2}(i) + 1$ at worst, where $log_{k^2}(i) - 1$ is a lower bound on the number of node lookups we can save. Note that this is quite a pessimistic lower bound, as it is unlikely that the ranges will be placed in the worst way possible. It is much more likely that the ranges will be placed next to each other, in which case the savings are even greater.
 
 The new approach splits the calls into a number of layers. We will assume there are $l$ such layers and the $i$-th layer contains $m_i$ ranges. Then m can be computed as follows.
 \begin{equation}
@@ -307,7 +316,7 @@ This means that we will use an extra $2*m*n$ time over the old approach but this
 If we instead assume that $l=1$, it follows from equations \ref{equation:new-running-time} that the new approach uses at most
 \[2*n + k*m*q - m*log_{k^2}(m)\] time. Here, the $2*n$ time is spent building the tree, and the rest is for the call to \textit{searchValuesInRanges}. In practise, $l$ will not always be 1, but it is likely to be very small.
 
-We will instead assume that $\forall i<l | m_i=m/l$, that is, the pixel-ranges are spread evenly among all layers. Then, the total time taken is approximately
+We will instead assume that $\forall i<l | m_i=m/l$, that is, the pixel ranges are spread evenly among all layers. Then, the total time taken is approximately
 \begin{equation}
     \begin{aligned}
          t_{new} \approx l * (2*n + k*q*m/l - m/l*log_{k^2}(m/l)) \\
@@ -339,7 +348,7 @@ This approach also allows \raven to use almost no memory other than what is need
 \subsubsection{Caching}
 The approach of creating fixed-sized partitions of the raster data allows the data structures to be cached in a replacing fashion in the sense that the cache can be created partially as needed. The logical coverage of each cache makes it easy to manage the reusability of the cache. If the data structures were created from the least required raster data for one join, it could require more work to create the uncached raster.
 
-We only cache the \kraster while the r-tree gets rebuild given the vector data. The reason being, the use case of the system is that the raster data is used with many different vector datasets and therefore the vector data is not the same between each join. However, it could be an option to cache these structures too for the purpose of doing different filters.
+We only cache the \kraster while the \rtree gets rebuild given the vector data. The reason being, the use case of the system is that the raster data is used with many different vector datasets and therefore the vector data is not the same between each join. However, it could be an option to cache these structures too for the purpose of doing different filters.
 
 \subsection{Visualizer} \label{sec:visualiser}
 
@@ -359,19 +368,19 @@ In figure \ref{fig:join-example} it is showcased how a join is visualized. Every
 \setkeys{Gin}{width=\linewidth}
 \begin{subfigure}{.45\textwidth}
   \includegraphics{images/03method/visualiser/GLC raw.png}
-  \caption{An area of the GLC2000 raster dataset corresponding to Europe.}
+  \caption{Snippet of Europe from the GLC2000 raster dataset.}
   \label{fig:BC}
 \end{subfigure}
 \hfil
 \begin{subfigure}{.45\textwidth}
   \includegraphics{images/03method/visualiser/protected areas.png}
-  \caption{The vector set protected areas.\\ \mbox{}}
+  \caption{The vector dataset Protected Areas.\\ \mbox{}}
   \label{fig:DC}
 \end{subfigure}
 
 \begin{subfigure}{.8\textwidth}
   \includegraphics{images/03method/visualiser/GLC join.png}
-  \caption{The result of joining that area with the Protected Areas vector set.}
+  \caption{The drawn result of joining GLC2000 and Protected Areas.}
   \label{fig:EC}
 \end{subfigure}%
 \caption{A visualisation of a join, highlighting the ability to visualise results using the original colours of the image}
