@@ -12,13 +12,13 @@ The following section contains an overview of real world data we are going to us
 \hline
 Dataset              & Size   & Vertices   &Polygons\\ \hline
 Boundaries \cite{Boundaries} & 8.39MB & 548471     & 4293\\ \hline
-Protected areas & 534MB  & 34861822   & 87251\\ \hline
+Protected Areas & 534MB  & 34861822   & 87251\\ \hline
 Small Woody Features \cite{SmallWoodyFeaturesVector} & 1.59GB & 105349748  & 462665\\ \hline
 \end{tabular}
 \caption{The vector sets used along with size and number of vertices.}
 \label{tab:vectordata}
 \end{table}
-We have selected three vector sets with varying sizes. Since our system only supports ESRI shapefiles\footnote{\url{https://webhelp.esri.com/arcgisdesktop/9.3/index.cfm?TopicName=Geoprocessing\%20considerations\%20for\%20shapefile\%20output}}, the hard limit on file size is 2GB. The sets are meant to show how we scale with the vector set size. The first the \textit{Boundaries} is a small vector set, but in terms of area, it covers the entire world. \textit{Protected areas} covers Europe, but has a lot more points to cover a smaller area. The final set \textit{Small Woody Features}. This set once again increases in size but covers a smaller area. This set only covers a subset of Spain.
+We have selected three vector sets with varying sizes. Since our system only supports ESRI shapefiles\footnote{\url{https://webhelp.esri.com/arcgisdesktop/9.3/index.cfm?TopicName=Geoprocessing\%20considerations\%20for\%20shapefile\%20output}}, the hard limit on file size is 2GB. The sets are meant to show how we scale with the vector set size. The first the \textit{Boundaries} is a small vector set, but in terms of area, it covers the entire world. \textit{Protected Areas} covers Europe, but has a lot more points to cover a smaller area. The final set \textit{Small Woody Features}. This set once again increases in size but covers a smaller area. This set only covers a subset of Spain.
 
 
 \paragraph{Raster Datasets}
@@ -142,10 +142,11 @@ This allows for easily configurable benchmarks, that can be run with very little
 
 \subsubsection{RaptorJoin}
 \label{sec:raptor-join}
-To fairly evaluate \raptor \& \raven, we had to convert \raptor to a parallel single-machine algorithm. Since the datasets consist of multiple images, the simplest way to do this, is to have it handle multiple of these images at a time. Note that this also means that for single image datasets, it will not run in parallel, which is also the case for GLC2000. The rest of the implementation simply follows the paper \citetitle{raptorjoin} by \citet{raptorjoin}. Furthermore, it utilizes functionality from \citet{Beast-impl} to read data and compute intersections.
+To fairly evaluate \raptor \& \raven, we had to convert \raptor to a parallel single-machine algorithm. Since the datasets consist of multiple images, the simplest way to do this, is to have it handle multiple of these images at a time. Note that this also means that for single image datasets, it will not run in parallel, which is also the case for \textit{GLC2000}. The rest of the implementation simply follows the paper \citetitle{raptorjoin} by \citet{raptorjoin}. Furthermore, it utilizes functionality from \citet{Beast-impl} to read data and compute intersections.
 
 
 \subsection{Metrics}
+
 \bigbreak
 \begin{mdframed}[hidealllines=true,backgroundcolor=lightgray!20]
 \paragraph*{Total time}
@@ -163,9 +164,9 @@ The benchmarks are executed on a virtual machine with four cores and 16 GB of RA
 
 \subsection{Configuration}
 
-The result type of \ravenjoin will always be the range value (see section \ref{sec:result-types}) as it has the most advantages while it is still comparable to the result of \raptorjoin. 
+The result type of \ravenjoin will always be the range value (see section \ref{sec:result-types}) as it has the most advantages while it carries the same information as the result of \raptorjoin. 
 
-The selectivity of the filtered joins are small to highlight the efficiency of the algorithm for this case. As listed, the selectivity is set to 0.057\%, 0.059\% and 1.96\% for GLC2000, Treecover and Small Woody Features respectively.
+The selectivity of the filtered joins are small to highlight the efficiency of the algorithm for this case. As listed, the selectivity is set to 0.057\%, 0.059\% and 1.96\% for \textit{GLC2000}, \textit{Treecover} and \textit{Small Woody Features} respectively. \todo[inline]{expand}
 
 The maximum and minimum number of children for \rstar nodes are fixed at 8 and 1 respectively for all benchmarks. This is because most of the time it does not make a significant performance difference for the join. It is very dataset dependent and there does not seem to be a clear pattern for the parameters influence of the join. 
 \subsection{Comparative Results}
@@ -190,7 +191,7 @@ This section covers results for all the real-world datasets for both \ravenjoin 
     \label{tab:vector-load-times}
 \end{table}
 
-Table \ref{tab:vector-load-times} shows The time spent loading and building the outer \rtree for the 3 different vector datasets. As expected, both loading and \rtree building takes longer for the larger datasets.
+Table \ref{tab:vector-load-times} shows The time spent loading and building the outer \rtree for the 3 different vector datasets. As expected, both loading and \rtree building takes longer for the larger datasets. \todo[inline]{This is not correct, figure out why....}
 
 \begin{figure}[H]
 \centering
@@ -207,12 +208,12 @@ Table \ref{tab:vector-load-times} shows The time spent loading and building the 
     \caption{Join time without filtering.}
     \label{fig:res-boundaries-no-filter}
 \end{subfigure}
-\caption{Boundaries with all raster datasets.}
+\caption{\textit{Boundaries} with all raster datasets.}
 \end{figure}
 
-Figure \ref{fig:res-boundaries-filter} shows the results for both \ravenjoin \& \raptorjoin for the vector set Boundaries and all three raster sets. Since boundaries is a small vector set, the time it takes to build and load is negligible. We show the times in table \ref{tab:vector-load-times}. This means that for all of the above results, the time is dominated by reading raster data, doing the join operation, and collecting results. Since this is a filtered result, the main advantage is the heavily reduced amount of results that have to be created. This goes for all three datasets, although it is more heavily visible for the small dataset GLC2000, which also lends itself to result compression. The benefit of which is more visible in figure \ref{fig:res-boundaries-no-filter}, since filtering does not play a factor.
+Figure \ref{fig:res-boundaries-filter} shows the results for both \ravenjoin \& \raptorjoin for the vector set \textit{Boundaries} and all three raster sets. Since \textit{boundaries} is a small vector set, the time it takes to build and load is negligible. We show the times in table \ref{tab:vector-load-times}. This means that for all of the above results, the time is dominated by reading raster data, doing the join operation, and collecting results. Since this is a filtered result, the main advantage is the heavily reduced amount of results that have to be created. This goes for all three datasets, although it is more heavily visible for the small dataset \textit{GLC2000}, which also lends itself to result compression. The benefit of which is more visible in figure \ref{fig:res-boundaries-no-filter}, since filtering does not play a factor.
 
-The results in figure \ref{fig:res-boundaries-no-filter} show the same joins as in figure \ref{fig:res-boundaries-filter}, but without a filter. For GLC2000 \raven is 95\% faster, which here it is mainly due to the raptor implementation not being parallelized for a single image dataset. Section \ref{sec:raptor-join} goes into further detail on how it is implemented. For Treecover, the two joins perform equally. The reason being that we are unable to benefit from a filter, but still have expensive lookups to retrieve values. Furthermore, while we are able to compress results, the average range length for Treecover is not long enough to offset the loss from value retrieval. A histogram of ranges lengths can be found in figure \ref{fig:treecover-histogram}
+The results in figure \ref{fig:res-boundaries-no-filter} show the same joins as in figure \ref{fig:res-boundaries-filter}, but without a filter. For \textit{GLC2000} \raven is 95\% faster, which here it is mainly due to the raptor implementation not being parallelized for a single image dataset. Section \ref{sec:raptor-join} goes into further detail on how it is implemented. For \textit{Treecover}, the two joins perform equally. The reason being that we are unable to benefit from a filter, but still have expensive lookups to retrieve values. Furthermore, while we are able to compress results, the average range length for \textit{Treecover} is not long enough to offset the loss from value retrieval. A histogram of ranges lengths can be found in figure \ref{fig:treecover-histogram}
 
 \begin{figure}[H]
     \centering
@@ -221,12 +222,12 @@ The results in figure \ref{fig:res-boundaries-no-filter} show the same joins as 
     \label{fig:treecover-histogram}
 \end{figure}
 
-The Small Woody Features dataset differs from the others since it is compressed. The size of the original dataset \& and the \kraster cache we build is very similar in size, meaning that we do not have to spend time decompressing while reading the same amount of data. Another reason is that the dataset lends itself nicely to result compression. Comparing it to both GLC2000 and Treecover that have an average range length of 2.92 and 2.86 respectively, Small Woody Features is much higher at 17.15. A full overview of range lengths for Small Woody Features can be found in figure \ref{fig:swf-history}.
+The \textit{Small Woody Features} dataset differs from the others since it is compressed. The size of the original dataset \& and the \kraster cache we build is very similar in size, meaning that we do not have to spend time decompressing while reading the same amount of data. Another reason is that the dataset lends itself nicely to result compression. Comparing it to both \textit{GLC2000} and \textit{Treecover} that have an average range length of 2.92 and 2.86 respectively, \textit{Small Woody Features} is much higher at 17.15. A full overview of range lengths for \textit{Small Woody Features} can be found in figure \ref{fig:swf-history}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\textwidth]{images/05evaluation/results/misc/hist_woody.png}
-    \caption{Histogram of range length from result of a join where everything in Small Woody Features (raster) is selected.}
+    \caption{Histogram of range length from result of a join where everything in \textit{Small Woody Features (raster)} is selected.}
     \label{fig:swf-history}
 \end{figure}
 
@@ -246,11 +247,11 @@ The Small Woody Features dataset differs from the others since it is compressed.
     \caption{Join time without filtering.}
     \label{fig:res-protected-no-filter}
 \end{subfigure}
-\caption{Protected Areas with all raster datasets.}
+\caption{\textit{Protected Areas} with all raster datasets.}
 \end{figure}
 
-As we scale up the vector set size, we see that for small datasets \ravenjoin suffers a significant loss. We can again refer to table \ref{tab:vector-load-times} where it shows the load and build time for Protected Areas. A more interesting result is that of Small Woody Features (raster). Comparing figure \ref{fig:res-boundaries-no-filter} with figure \ref{fig:res-protected-no-filter}, we see that there is a difference of roughly 27 minutes, or around 63\% for \raptorjoin. To figure out why this is, we conducted a few experiments. We found that for the join using \textit{Boundaries} and \textit{Treecover}, around 6\% of the time is spent building \raptorjoin's \textit{flash indices}. For the join using \textit{Protected Areas}, this part of the join takes   Part of the reason for this is that Protected Areas produces around 21\% more results than Boundaries when joined with SWF (raster). 
-
+As we scale up the vector set size, we see that for small datasets \ravenjoin suffers a significant loss. We can again refer to table \ref{tab:vector-load-times} where it shows the load and build time for \textit{Protected Areas}. A more interesting result is that of \textit{Small Woody Features (raster)}. Comparing figure \ref{fig:res-boundaries-no-filter} with figure \ref{fig:res-protected-no-filter}, we see that there is a difference of roughly 27 minutes, or around 63\% for \raptorjoin. To figure out why this is, we conducted a few experiments. We found that for the join using \textit{Boundaries} and \textit{Treecover}, around 6\% of the time is spent building \raptorjoin's \textit{flash indices}.
+For the join using \textit{Protected Areas}, this part of the join takes about 5 times as long. The remaining part of the join we will assume is mostly spent reading pixels from disc. We saw that the join with \textit{Protected Areas} produces 21\% more results than with \textit{Boundaries} when joined with \textit{SWF (raster)}. If we use this information to compute an expected time for the \textit{Protected Areas} join using the time from the \textit{Boundaries} join, we get an expected time of close to 62 minutes. The remaining difference is small enough that it could be caused by randomness. The reason \textit{Treecover} is not affected as heavily by the extra time needed to create flash indices, is that there are fewer indices generated by that dataset. Since the intersections are sorted, the running time of \raptorjoin is linearithmically dependent on the number of them. Hence, \textit{Small Woody Features} spends much more time creating flash indices even though it only has around twice as many of them to create.
 Again for the filtered result, we see that there is a larger difference between \raven and \raptor, simply due to there being much fewer results.
 
 % Explain filtering that makes treecover fast
@@ -274,26 +275,17 @@ Again for the filtered result, we see that there is a larger difference between 
     \caption{Join time without filtering.}
     \label{fig:res-woody-no-filter}
 \end{subfigure}
-\caption{Small Woody Features (vector) with all raster datasets.}
+\caption{\textit{Small Woody Features (vector)} with all raster datasets.}
 \label{fig:res-woody}
 \end{figure}
 
-Figure \ref{fig:res-woody} shows the result for the Small Woody Features vector set. For the GLC2000 raster set, we again have to refer to table \ref{tab:vector-load-times} to see that almost all of the time, is spent reading the vector data. Comparing figure \ref{fig:res-woody-filter} with figure \ref{fig:res-woody-no-filter}, we see that for \raven, the join times are fairly similar. While this is the largest vector set being used for testing, it is also the one covering the smallest area. 
+Figure \ref{fig:res-woody} shows the result for the \textit{Small Woody Features} vector set. For the \textit{GLC2000} raster set, we again have to refer to table \ref{tab:vector-load-times} to see that almost all of the time, is spent reading the vector data. Comparing figure \ref{fig:res-woody-filter} with figure \ref{fig:res-woody-no-filter}, we see that for \raven, the join times are fairly similar. While this is the largest vector set being used for testing, it is also the one covering the smallest area. 
 
-The join between SWF(Vector) and SWF is also the largest difference we see between \raven and \raptor. Referring back to table \ref{tab:rasterdata} we can see that SWF only has three colours. This means that we can benefit from range compression easily. Furthermore, since the vector data is a subset of the SWF raster data, any overlaps that we do find, should in theory result in longer ranges. This is also visible in figure \ref{fig:swf-history}, which shows range length distribution.
+The join between \textit{SWF (vector)} and \textit{SWF (raster)} is also the largest difference we see between \raven and \raptor. Referring back to table \ref{tab:rasterdata} we can see that \textit{SWF (raster)} only has three colours. This means that we can benefit from range compression easily. Furthermore, since the vector data is a subset of the raster data, any overlaps that we do find, should in theory result in longer ranges. This is also visible in figure \ref{fig:swf-history}, which shows range length distribution.
 
 
 
 % Explain why there is not a significant difference from the filter version (eg. since there is a perfect overlap, in theory no values should be filtered)
-
-For compressed raster datasets there is a large performance gap compared to \raptorjoin. Decompressing the data takes extra time and likewise is this time saved with the \kraster index. 
-
-
-Joining the Treecover with no filter takes longer than \raptorjoin. This is because there is little time to save creating range values for this dataset and therefore the algorithm has to retrieve values at the maximum depth of the \kraster. This has a large cost even if the vector set only has a few large polygons as seen in figure \ref{fig:res-boundaries-no-filter} and \ref{fig:res-protected-no-filter}.
-
-
-
-
 
 
 
@@ -305,7 +297,7 @@ The memory consumption of the \kraster data structure is quite low, especially i
 \begin{figure}[H]
     \centering
     \includegraphics[height=6cm]{images/05evaluation/results/misc/memcomparison.png}
-    \caption{Comparison of memory consumption for a join with SWF (raster, 2 images) and Boundaries.}
+    \caption{Comparison of memory consumption for a join with \textit{SWF (raster, 2 images)} and \textit{Boundaries}.}
     \label{fig:mem-comp}
 \end{figure}
 
@@ -382,7 +374,7 @@ As mentioned in section \ref{sec:extract-cells}, we came up with a modification 
     \label{fig:old-vs-new}
 \end{figure}
 
-As seen in figure \ref{fig:old-vs-new}, The version of \raven using our new \textit{extractCells} method performs better than the old version overall, and significantly better on the \textit{Small Woody Features} raster dataset. One possible explanation for why \textit{Small Woody Features} is such an outlier is that that raster dataset has tiles that cover very small areas. This means that each tile will overlap with few geometries and for that reason it will have fewer pixel ranges next to each other horizontally.
+As seen in figure \ref{fig:old-vs-new}, the version of \raven using our new \textit{extractCells} method performs better than the old version overall, and significantly better on the \textit{Small Woody Features} raster dataset. One possible explanation for why \textit{Small Woody Features} is such an outlier is that this raster dataset has tiles that cover very small areas. This means that each tile will overlap with few geometries and for that reason it will have fewer pixel ranges next to each other horizontally.
 
 \subsubsection{Selectivity}
 
@@ -404,7 +396,7 @@ As seen in figure \ref{fig:old-vs-new}, The version of \raven using our new \tex
 \end{figure}
 
 
-In figure \ref{fig:filter-selectivity}, we see that selecting everything performs the same as getting no results. This is due to the fact that each pixel range can be directly added to the results once the value has been accessed from the \kraster. In this scenario, there are pixel ranges that span across the whole image and there is only one pixel range per row in the image. The low selectivity gains performance as there are fewer results to be collected. At 50\% selectivity, the algorithm has to search a bit in the \kraster and at the same time there will be more pixel ranges in total. 
+In figure \ref{fig:filter-selectivity}, we see that selecting everything performs the same as getting no results. This is due to the fact that each pixel range can be directly added to the results once the value has been accessed from the \kraster. In this scenario, there are pixel ranges that span across the whole image and there is only one pixel range per row in the image. The low selectivity gains performance as there are fewer results to be collected. At 50\% selectivity, the algorithm has to search the \kraster and at the same time there will be more pixel ranges in total. 
 
 Figure \ref{fig:vector-density} shows that the join time of \ravenjoin depends on the spatial selectivity. This makes sense, since having a larger overlap between vector and raster data produces more results and therefore takes longer. The shape of the graph can be explained by the fact that the number of ranges created depends mainly on the height of each vector shape. This height grows with the square root of the spatial selectivity in our tests. Hence, the graph resembles a square root function.
 
@@ -426,7 +418,7 @@ To give a perspective of the one time cost of building the cache, we can take a 
 To investigate the performance related to the \rtree data structure we test the datasets with a few different \rtree types. Note that generally there are not that many polygons in our dataset (see table \ref{tab:vectordata}) which means the \rtree will not be that deep.
 
 \paragraph{\rtree Overlap}
-Since the search performance of the \rtree is impacting the join time, we want to provide a metric of how efficient the search is. The search time is mostly affected by how the directorial nodes overlap each other. To compare how these overlaps differ between different \rtree{}s, an overlap ratio is calculated using the definition from  \citet{airtree}. If the ratio is 1.0, it means the query only traversed leaf nodes that had matches of entries. In table \ref{tab:overlap_ratio} there are overlap ratios for the \str, \rstar, and \rtree where the queried areas are the bounds of the individual "treecover" images.
+Since the search performance of the \rtree is impacting the join time, we want to provide a metric of how efficient the search is. The search time is mostly affected by how the directorial nodes overlap each other. To compare how these overlaps differ between different \rtree{}s, an overlap ratio is calculated using the definition from  \citet{airtree}. If the ratio is 1.0, it means the query only traversed leaf nodes that had matches of entries. In table \ref{tab:overlap_ratio} there are overlap ratios for the \str, \rstar, and \rtree where the queried areas are the bounds of the individual \textit{Treecover} images.
 
 \begin{table}[H]
     \centering
@@ -471,6 +463,10 @@ The plots for each run can be seen in appendix \ref{sec:inner-r-tree}. These exp
 \subsection{Result Summary}
 If a cache for the raster set has been built, \ravenjoin outperforms \raptorjoin in most cases, especially when a filter on the raster values is applied to the join. If a cache has not already been built, \ravenjoin will take longer to compute the first join but will catch up to \raptorjoin after approximately 2-3 joins depending on the datasets.
 \ravenjoin also has the advantage that it can work with far less memory than \raptorjoin can.
+
+For compressed raster datasets there is a large performance gap compared to \raptorjoin. Decompressing the data takes extra time and this is saved when using an existing \kraster cache. 
+
+Joining the \textit{Treecover} with no filter takes around the same time for  \raptorjoin and \ravenjoin. This is because there is little time to save creating range values for this dataset and therefore the algorithm has to retrieve values at the maximum depth of the \kraster. This has a large cost even if the vector set only has a few large polygons as seen in figure \ref{fig:res-boundaries-no-filter} and \ref{fig:res-protected-no-filter}.
 
 The size of the cache generated by the \ravenjoin algorithm depends logarithmically on the range of values present in the image, and linearly on the number of single-coloured regions present in the image.
 

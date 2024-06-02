@@ -19,16 +19,18 @@ To further reduce the size of the \kraster, instead of storing the ranges direct
     \label{fig:k2raster-structure}
 \end{figure}
 
-\paragraph{\rtree} To query the vector data efficiently in a given area, a spatial index is used. One of the most common indices, is an \rtree \cite{rtree}. The data structure groups spatial data in close proximity given their Minimum Bounding Rectangle (MBR). Region search queries traverse the overlapping nodes in the tree which quickly excludes a lot of data with no overlap from the search.
+\paragraph{\rtree} To query the vector data efficiently in a given area, a spatial index is used. One of the most common indices, is an \rtree \cite{rtree}. The data structure groups spatial data in close proximity given their Minimum Bounding Rectangle (\textit{MBR}). Region search queries traverse the overlapping nodes in the tree which quickly excludes a lot of data with no overlap from the search.
 
-The \rstar \cite{rstartree} variant improves the search time of the tree by minimizing the overlaps of the nodes at the cost of longer build time. The vector data is loaded in as polygons that get inserted into the \rstar, one by one. It is also possible to bulk load the vector data with Sort Tile Recursive \cite{str} (STR) and Overlap Minimizing Top-down \cite{omt} (OMT), which is beneficial for large vector datasets. We are going use a library that can do STR bulk loading and create the \rstar variant. Ideally, we would do STR loading with \rstar nodes, but this was not available with the library we use.
+The \rstar \cite{rstartree} variant improves the search time of the tree by minimizing the overlaps of the nodes at the cost of longer build time. The vector data is loaded in as polygons that get inserted into the \rstar, one by one. It is also possible to bulk load the vector data with Sort Tile Recursive \cite{str} (\textit{STR}) and Overlap Minimizing Top-down \cite{omt} (\textit{OMT}), which is beneficial for large vector datasets. We are going use a library that can do STR bulk loading and create the \rstar variant. Ideally, we would do STR loading with \rstar nodes, but this was not available with the library we use.
 
 \subsection{Data Loading}
 To compute spatial joins \raven needs to support both vector and raster data formats. To limit the scope, we only support the following: esri formatted shapefiles\footnote{\url{https://www.esri.com/content/dam/esrisites/sitecore-archive/Files/Pdfs/library/whitepapers/pdfs/shapefile.pdf}} and GeoTiff\footnote{\url{https://www.loc.gov/preservation/digital/formats/fdd/fdd000279.shtml}}. For GeoTiff we support both inlined and sidecar World File information. The entire vector set is loaded into a \str. This is done using a single thread, which means that reading the vector set can become a bottleneck if the set becomes too large, especially in cases where the vector set is larger than the raster set. 
 
 This initial index is used to decide whether there is an overlap between a raster tile bounds and any of the geometries. If no such overlap is found, we are able to discard the entire raster tile and avoid building \kraster. If there is an overlap, the tile is selected for further processing. The first step of the processing is to transform the vector data, such that it uses a common coordinate reference system. 
 
-Once this transformation is done, a new tree is built using the transformed geometries. To further reduce memory, each raster tile is split into subtitles of a configurable size. This allows for only keeping very small amounts of raster data in memory at one time, while sacrificing speed. A measurement of this can be found in section \ref{sec:memory}. At this point, raster data is read and \kraster structures are built and paired with the accompanying geometries that were found to be overlapping. Figure \ref{fig:k-raster-r-tree-overlap} shows this pairing visually. The red shapes are polygons while the blue boxes are \rstar MBR outlines. The grey boxes represent \kraster nodes.\footnote{The boxes are only drawn to level 14 of the tree to prevent visual clutter} As expected, areas where pixels have the same value are more sparse. E.g. the water around Denmark.
+Once this transformation is done, a new tree is built using the transformed geometries. To further reduce memory, each raster tile is split into subtitles of a configurable size. This allows for only keeping very small amounts of raster data in memory at one time, while sacrificing speed. A measurement of this can be found in section \ref{sec:memory}. At this point, raster data is read and \kraster structures are built and paired with the accompanying geometries that were found to be overlapping. Figure \ref{fig:k-raster-r-tree-overlap} shows this pairing visually. The red shapes are polygons while the blue boxes are \rstar MBR outlines. The grey boxes represent \kraster nodes.\footnote{The boxes are only drawn to level 14 of the tree to prevent visual clutter} As expected, areas where pixels have the same value are more sparse. E.g. the water around Denmark. These pairs 
+
+
 
 \begin{figure}[H]
     \centering
@@ -38,6 +40,7 @@ Once this transformation is done, a new tree is built using the transformed geom
 \end{figure}
 
 \subsection{Join Algorithm}
+\label{sec:raven-join}
 
 As mentioned, \ravenjoin is based on the algorithm described in \citetitle{k2rasterjoin}. The main differences between that algorithm and \ravenjoin are
 \begin{itemize}
@@ -117,7 +120,7 @@ This is a slower version of the previous method. The goal of this method is to f
 \end{itemize}
 This result type is the slowest. This type requires that for each pixel, an object is created and included in the result list. It is also the type that most closely matches the result type of the \raptorjoin algorithm.
 
-\paragraph{RangeValues} The range value result type encodes the same information as the value type above, but instead of individual pixels in the list, it has ranges of pixels that have the same values. A range consists of a row number, a start and stop column, and a value for that range. Using this type, areas that have identical pixel values, are compressed into fewer pixel ranges. Figure \ref{fig:result-type} shows these ranges in a join between GLC2000 \& boundaries. Pixels that have a similar shade, are part of a range with the same length with the exception of the background colour.
+\paragraph{RangeValues} The range value result type encodes the same information as the value type above, but instead of individual pixels in the list, it has ranges of pixels that have the same values. A range consists of a row number, a start and stop column, and a value for that range. Using this type, areas that have identical pixel values, are compressed into fewer pixel ranges. Figure \ref{fig:result-type} shows these ranges in a join between \textit{GLC2000} \& \textit{boundaries}. Pixels that have a similar shade, are part of a range with the same length with the exception of the background colour.
 
 \begin{figure}[H]
     \centering
@@ -136,17 +139,17 @@ This result type is the slowest. This type requires that for each pixel, an obje
 \subsubsection{Extract Cells}
 \label{sec:extract-cells}
 In \citetitle{k2rasterjoin}, the join operation described produces a list of probable results and one of definite results. They describe that in order to reduce this to one list of results, a \textit{refinement step} is needed. In this step, each geometry in the probable result list, is examined more closely to find all pixels within them that match the filter. This step is not described further in their paper.
-In \citetitle{k2raster}, methods are provided to efficiently extract values from the \kraster tree. The most interesting one of these is the one they call \textit{searchValuesInWindow}. It takes as input, a rectangle and returns all pixels within this rectangle that matches the filter. It saves time over getting all pixel values within the window and then using the filter to discard pixels. It uses the filter during the search to avoid exploring parts of the \kraster tree that do not match the filter.
+In \citetitle{k2raster}, methods are provided to efficiently extract values from the \kraster tree. The most interesting one of these is the one they call \textit{search values in window}. It takes as input, a rectangle and returns all pixels within this rectangle that matches the filter. It saves time over getting all pixel values within the window and then using the filter to discard pixels. It uses the filter during the search to avoid exploring parts of the \kraster tree that do not match the filter.
 
-Our initial approach to find all the results, was to first produce both the definite and probable results list like they mention in the paper. Both lists contain pixel ranges that overlap with some polygon. We would then go through all pixel ranges in the probable list and use the \textit{searchValuesInWindow} method on each row to get only the pixels that match the filter.
+Our initial approach to find all the results, was to first produce both the definite and probable results list like they mention in the paper. Both lists contain pixel ranges that overlap with some polygon. We would then go through all pixel ranges in the probable list and use the \textit{search values in window} method on each row to get only the pixels that match the filter.
 
 A slight improvement to this method was made by only producing one list and performing the last step mentioned above immediately when we would have otherwise added the ranges to the probable results list. This saves time, since we can avoid an additional iteration over all results in the probable results list.
 
-We saw that this method could still be improved, since pixel ranges that lie close to each other would cause multiple calls to the \textit{searchValuesInWindow} with each call starting out identically. This is because the method in question starts at the root of the tree and recursively queries child nodes that overlap with the given window.
+We saw that this method could still be improved, since pixel ranges that lie close to each other would cause multiple calls to the \textit{search values in window} with each call starting out identically. This is because the method in question starts at the root of the tree and recursively queries child nodes that overlap with the given window.
 
-To save time on node lookups, we came up with the idea of giving multiple ranges to a method performing similar work to \textit{searchValuesInWindow}. We call this function \textit{searchValuesInRanges}. The problem then became allowing the algorithm to quickly determine whether a certain \kraster node contains any of the given ranges. It is not feasible to go through all ranges and find out if they overlap as this would simply take too long.
+To save time on node lookups, we came up with the idea of giving multiple ranges to a method performing similar work to \textit{search values in window}. We call this function \textit{search values in ranges}. The problem then became allowing the algorithm to quickly determine whether a certain \kraster node contains any of the given ranges. It is not feasible to go through all ranges and find out if they overlap as this would simply take too long.
 
-Instead, we came up with the idea of making multiple calls to \textit{searchValuesInRanges} where at most one range per row is included in each call. This allows us to use a $k$-ary segment tree that can be built quickly and answer queries about the horizontal span of ranges. Queries that contain only ranges within the rows used by a given \kraster node can be answered in constant time. This span can then be used to determine whether the \kraster node overlaps with at least one of the given ranges.
+Instead, we came up with the idea of making multiple calls to \textit{search values in ranges} where at most one range per row is included in each call. This allows us to use a $k$-ary segment tree that can be built quickly and answer queries about the horizontal span of ranges. Queries that contain only ranges within the rows used by a given \kraster node can be answered in constant time. This span can then be used to determine whether the \kraster node overlaps with at least one of the given ranges.
 
 To only give the method one range per row at most, we split the ranges into what we call \textit{layers}. The first layer contains the first pixel range from all rows that have one. The second layer contains the second pixel range from all rows that have at least 2 ranges, and so on. The total number of layers is therefore determined by the number of ranges in the most populated row.
 
@@ -269,7 +272,7 @@ $z \gets rank(T,z)*k^2$\\
 
 \paragraph{Analysis of worst-case performance} under the assumption that the ranges are not placed such that the range tree does not work as intended.
 
-Let $n$ be the side length of the raster image, $k$ be a constant used in the \kraster tree, and $m$ be the number of ranges found by the initial step of extractCells. Let $q$ denote the average length of these ranges.
+Let $n$ be the side length of the raster image, $k$ be a constant used in the \kraster tree, and $m$ be the number of ranges found by the initial step of the \textit{extract cells} method. Let $q$ denote the average length of these ranges.
 Using the old approach, it will do $m$ runs of the search function, which will, in the worst case, have to go through all $log_k(n)$ levels. At the lowest level, they will have to enter at most $q/k$ nodes at the last level, then $q/k^2$ and so on. At each recursive call, they will have to perform approximately $k^2$ work, as they will look at all possible candidates for further recursion. The sum of work done for one initial call of the function is:
 
 \[\sum_{i=1}^{log_k(n)} q*k^2/(k^i) = k^2(n-1)q/(k-1)n \approx k*q \]
@@ -314,7 +317,7 @@ The worst case for our new approach is when $l=m$, this will only happen when al
 This means that we will use an extra $2*m*n$ time over the old approach but this will happen very rarely, and even when it does, $m$ is likely to be very small. This is because if $l=m$ that must mean that only one of the outer rows are used. That means that a shape is mostly outside the raster data, and its outline crosses the raster bounding box $2*m$ times. For large $m$ this is very unlikely.
 
 If we instead assume that $l=1$, it follows from equations \ref{equation:new-running-time} that the new approach uses at most
-\[2*n + k*m*q - m*log_{k^2}(m)\] time. Here, the $2*n$ time is spent building the tree, and the rest is for the call to \textit{searchValuesInRanges}. In practise, $l$ will not always be 1, but it is likely to be very small.
+\[2*n + k*m*q - m*log_{k^2}(m)\] time. Here, the $2*n$ time is spent building the tree, and the rest is for the call to \textit{search values in ranges}. In practise, $l$ will not always be 1, but it is likely to be very small.
 
 We will instead assume that $\forall i<l | m_i=m/l$, that is, the pixel ranges are spread evenly among all layers. Then, the total time taken is approximately
 \begin{equation}
