@@ -18,7 +18,7 @@ Small Woody Features \cite{SmallWoodyFeaturesVector} & 1.59GB & 105349748  & 462
 \caption{The vector sets used along with size and number of vertices.}
 \label{tab:vectordata}
 \end{table}
-We have selected three vector sets with varying sizes. Since our system only supports ESRI shapefiles\footnote{\url{https://webhelp.esri.com/arcgisdesktop/9.3/index.cfm?TopicName=Geoprocessing\%20considerations\%20for\%20shapefile\%20output}}, the hard limit on file size is 2GB. The sets are meant to show how we scale with the vector set size. The first the \textit{Boundaries} is a small vector set, but in terms of area, it covers the entire world. \textit{Protected Areas} covers Europe, but has a lot more points to cover a smaller area. The final set \textit{Small Woody Features}. This set once again increases in size but covers a smaller area. This set only covers a subset of Spain.
+We have selected three vector sets with varying sizes. Since our system only supports ESRI shapefiles\footnote{\url{https://webhelp.esri.com/arcgisdesktop/9.3/index.cfm?TopicName=Geoprocessing\%20considerations\%20for\%20shapefile\%20output}}, the hard limit on file size is 2GB. The sets are meant to show how we scale with the vector set size. The first set, \textit{Boundaries} is a small vector set, but in terms of area, it covers the entire world. \textit{Protected Areas} covers Europe, but has a lot more points to cover a smaller area. The final set is \textit{Small Woody Features}. This set once again increases in size but covers a smaller area. It covers the majority of the \textit{Castile and León} region in Spain.
 
 
 \paragraph{Raster Datasets}
@@ -35,10 +35,10 @@ Small Woody Features \cite{SmallWoodyFeaturesRaster} & 6.04GB & LZW         & 8 
 \label{tab:rasterdata}
 \end{table}
 
-The raster sets we have picked are likewise three different sizes, to see how it scales. The properties we have included in the table, are all parameters that can affect the join time for \raven. The sets that have been selected, guarantee that there is an overlap, no matter the vector set that it is joined with. \textit{GLC2000} covers the entire world. For Treecover, we have selected a subset that covers the entirety of Europe. Finally, the \textit{Small Woody Features} set covers the same area as the equivalent vector set.
+The raster sets we have picked are likewise three different sizes, to see how it scales. The properties we have included in the table, are all parameters that can affect the join time for \raven. The sets that have been selected, guarantee that there is an overlap, no matter the vector set that it is joined with. \textit{GLC2000} covers the entire world. For Treecover, we have selected a subset that covers the entirety of Europe. Finally, the \textit{Small Woody Features} raster dataset also covers Europe.
 
 \subsubsection{Synthetic Data}
-This section details the synthetic datasets along with examples and purpose.
+This section details the synthetic datasets along with examples and their purpose.
 \paragraph{Raster (filtering workload)}
 The percentages of values to select will be from 0\% to 100\% with two percent increments.
 
@@ -63,8 +63,8 @@ In figure \ref{fig:selectivity} we see examples of data used for selectivity tes
  
 \paragraph{Raster (\kraster Compression)}
 \begin{itemize}
-    \item For Voronoi noise, we vary the number of tiles. For each of the tiles, we arrange them, such that each neighboring tile has a different colour. For the benchmark we vary the number of tiles between $2^2, 2^3, ... ,2^8$. An example of two of these tiles can be found in figure \ref{fig:voronoi_example}, where figure \ref{fig:voronoi_16} has 16 tiles and \ref{fig:voronoi_64} has 64 tiles.
-    \item Perlin noise. To make our synthetic data resemble real-world data, we utilize Perlin noise to generate the \textit{base} landscape. We then map this landscape to a desired amount of different colors to be used in both bit depth testing and colour testing. An example of the type of landscapes we generate can be found in figure \ref{fig:perlin_example}.
+    \item For testing the ability of the \kraster to compress images, we use Voronoi noise with varying number of colours. For each of the regions, we arrange them, such that each neighboring regions has a different colour. For the benchmark we vary the number of regions between $2^2, 2^3, ... ,2^8$. An example of two of these images can be found in figure \ref{fig:voronoi_example}, where figure \ref{fig:voronoi_16} has 16 regions and \ref{fig:voronoi_64} has 64 regions.
+    \item We also test the DAC encodings ability to compress the \kraster. To do this, we utilises Perlin noise to generate a \textit{base} landscape. We then map this landscape to use a desired amount of bits per pixel. The advantage of Perlin noise is that the resulting image resembles real landscape images. An example of the type of landscapes we generate can be found in figure \ref{fig:perlin_example}.
 \end{itemize}
 
 \begin{figure}[H]
@@ -72,18 +72,18 @@ In figure \ref{fig:selectivity} we see examples of data used for selectivity tes
      \begin{subfigure}[b]{0.35\textwidth}
          \centering
          \includegraphics[width=\textwidth]{images/05evaluation/synthetic examples/voronoi16.png}
-         \caption{16 tiles}
+         \caption{16 regions}
          \label{fig:voronoi_16}
      \end{subfigure}
      \hspace{1cm}
      \begin{subfigure}[b]{0.35\textwidth}
          \centering
          \includegraphics[width=\textwidth]{images/05evaluation/synthetic examples/voronoi64.png}
-         \caption{64 tiles}
+         \caption{64 regions}
          \label{fig:voronoi_64}
      \end{subfigure}
 
-        \caption{Comparison of different amounts of tiles for Voronoi noise.}
+        \caption{Comparison of different amounts of regions for Voronoi noise.}
         \label{fig:voronoi_example}
 \end{figure}
 
@@ -166,9 +166,9 @@ The benchmarks are executed on a virtual machine with four cores and 16 GB of RA
 
 The result type of \ravenjoin will always be the range value (see section \ref{sec:result-types}) as it has the most advantages while it carries the same information as the result of \raptorjoin. 
 
-The selectivity of the filtered joins are small to highlight the efficiency of the algorithm for this case. As listed, the selectivity is set to 0.057\%, 0.059\% and 1.96\% for \textit{GLC2000}, \textit{Treecover} and \textit{Small Woody Features} respectively. \todo[inline]{expand}
+The selectivity of the filtered joins are small to highlight the efficiency of the algorithm for this case. As listed, the selectivity is set to 0.057\%, 0.059\% and 1.96\% for \textit{GLC2000}, \textit{Treecover} and \textit{Small Woody Features} respectively. Note that these percentages represent how large a portion of the whole image is matched. In practice, the effective percentages are much higher. For example, around 70\% of \textit{GLC2000} is water, but most of our vector datasets are on land. For \textit{Small Woody Features}, these 1.96\% represents all woody features and the remaining part of the images are either water or non-wooded land areas.
 
-The maximum and minimum number of children for \rstar nodes are fixed at 8 and 1 respectively for all benchmarks. This is because most of the time it does not make a significant performance difference for the join. It is very dataset dependent and there does not seem to be a clear pattern for the parameters influence of the join. 
+The maximum and minimum number of children for \rstar nodes are fixed at 8 and 1 respectively for all benchmarks. This is because most of the time it does not make a significant performance difference for the join. It is very dataset dependent and there does not seem to be a clear pattern for the parameters' influence of the join. 
 \subsection{Comparative Results}
 \label{sec:comparative-results}
 
