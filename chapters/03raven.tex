@@ -346,9 +346,9 @@ This approach also allows \raven to use almost no memory other than what is need
 
 
 \subsubsection{Caching}
-The approach of creating fixed-sized partitions of the raster data, allows the data structures to be cached in a replacing fashion in the sense that the cache can be created partially as needed. The logical coverage of each cache makes it easy to manage the reusability of the cache. If the data structures were created from the least required raster data for one join, it could require more work to create the uncached raster.
+The approach of creating fixed-sized partitions of the raster data, allows the data structures to be cached in a replacing fashion, in the sense that the cache can be created partially as needed. The logical coverage of each cache, makes it easy to manage the reusability of the cache. If the data structures were created from the least required raster data for one join, it could require more work to create the uncached data structures.
 
-We only cache the \kraster while the \rtree gets rebuild given the vector data. The reason being, the use case of the system is that the raster data is used with many different vector datasets and therefore the vector data is not the same between each join. However, it could be an option to cache these structures too for the purpose of doing different filters.
+We only cache the \kraster while the \rtree gets rebuild, given the vector data. The reason being, the use case of the system, is that the raster data is used with many different vector datasets, and therefore the vector data is not the same between each join. However, it could be an option to cache these structures too for the purpose of doing different filters.
 
 \subsection{Visualizer} \label{sec:visualiser}
 
@@ -356,12 +356,11 @@ The \raven system contains a visualizer which is helpful for checking correctnes
 \begin{itemize}
     \item Drawing the result created by the \ravenjoin algorithm. In addition to the two other colour types, this can be also done using the original colour scheme from the raster file.
     \item Drawing the nodes of the \kraster tree.
-    \item Drawing the MBR of the nodes of the \rstar.
+    \item Drawing the MBR of the nodes of the \rtree.
     \item It can also draw the vector data on top of any of the previous.
 \end{itemize}
 
 In figure \ref{fig:join-example} it is showcased how a join is visualized. Every cell of the raster data inside the polygons are reconstructed in an image. 
-
 
 \begin{figure}[H]
     \centering   %

@@ -3,8 +3,8 @@ In this section we are going to evaluate \raven and compare it to a version of \
 \subsection{Workload}
 \label{sec:workload}
 The workloads can be split into two major categories. The real-world datasets and synthetic datasets. The real-world datasets are meant to show real-world performance, allowing us to compare the different approaches. The synthetic sets are meant to test certain aspects of the approach where we control all the parameters, to examine exactly the subsystem or area of interest.
-\subsubsection{Real World Data}
-The following section contains an overview of real world data we are going to use for the evaluation. There are some relevant properties included. 
+\subsubsection{Real-World Data}
+The following section contains an overview of real-world data we are going to use for the evaluation. (see appendix \ref{app:datasets} for images) There are some relevant properties included. 
 \paragraph{Vector Datasets} 
 \mbox{} % :(
 \begin{table}[H]
@@ -97,7 +97,7 @@ In figure \ref{fig:selectivity} we see examples of data used for selectivity tes
 
 \paragraph{Raster (number of values)} The benchmark will test 
 $2^1, 2^2, ..., 2^{13}$ values with Perlin noise. 
-This is to test the effects of the number of different raster values on our result type. The \kraster can compress the image more or less given how many equal values there are next to each other. Increasing the number of possible values, makes it more unlikely for the image to contain any groups of pixels with the same value.
+This is to test the effects of the number of different raster values on our result type. Both the \kraster and our result type can compress the image more or less depending on how many equal values there are next to each other. Increasing the number of possible values, makes it less likely for the image to contain larger groups of pixels with the same value.
 
 \begin{figure}[H]
     \centering   %
@@ -131,18 +131,18 @@ This set is for testing how the coverage of the raster data affects join time. T
 \subsection{Implementation}
 This section covers the implementation details of the benchmarks. It will cover the benchmarking framework \textit{eagle} and the runners, that are executed by the framework.
 \subsubsection{Eagle} \label{sec:eagle}
-\eagle is a framework for easily running containerized benchmarks. Eagle takes as input a JSON file that describes the experiments to run. It then orchestrates the necessary containers, mounts datasets, and executes the specified command inside the container. Finally, it collects the output from the benchmarked program, and automatically creates plots. This of course requires a consistent format for both input and output of the programs that are being benchmarked. For this purpose, we created thin wrappers that we have named \textit{runners}. These runners are responsible for taking input parameters, passing them correctly into the program that is to be executed, timing the runs, and finally printing a result, that is collected by \eagle. The runners we have created are:
+\eagle is a framework for easily running containerised benchmarks. Eagle takes as input a JSON file that describes the experiments to run. It then orchestrates the necessary containers, mounts datasets, and executes the specified command inside the container. Finally, it collects the output from the program it ran in the benchmark, and automatically creates plots. This of course requires a consistent format for both input and output of the programs that are being benchmarked. For this purpose, we created thin wrappers that we have named \textit{runners}. These runners are responsible for taking input parameters, passing them correctly into the program that is to be executed, timing the runs, and finally printing a result, that is collected by \eagle. The runners we have created are:
 
 \paragraph{\raven Runner} Responsible for executing \ravenjoin. Built using Java, such that \raven can be imported as a dependency. Since we want to test a hot run, the runner itself is also responsible for running the required iterations. 
 
-\paragraph{Raptor Runner} Responsible for executing \raptorjoin. Like the \raven Runner, it imports our implementation of \raptorjoin as a dependency and is responsible for iterations.
-
+\paragraph{Raptor Runner} Responsible for executing \raptorjoin. Like the \raven Runner, it imports our implementation of \raptorjoin as a dependency and is responsible for running the correct number of iterations.
+\break
 
 This allows for easily configurable benchmarks, that can be run with very little oversight. All of the definitions used for benchmarking using eagle in this thesis are included in appendix \ref{app:bench}.
 
 \subsubsection{RaptorJoin}
 \label{sec:raptor-join}
-To fairly evaluate \raptor \& \raven, we had to convert \raptor to a parallel single-machine algorithm. Since the datasets consist of multiple images, the simplest way to do this, is to have it handle multiple of these images at a time. Note that this also means that for single image datasets, it will not run in parallel, which is also the case for \textit{GLC2000}. The rest of the implementation simply follows the paper \citetitle{raptorjoin} by \citet{raptorjoin}. Furthermore, it utilizes functionality from \citet{Beast-impl} to read data and compute intersections.
+To fairly evaluate \raptorjoin \& \ravenjoin, we had to convert \raptorjoin to a parallel single-machine algorithm. Since the datasets consist of multiple images, the simplest way to do this, is to have it handle multiple of these images at a time. Note that this also means that for single image datasets, it will not run in parallel, which is also the case for \textit{GLC2000}. The rest of the implementation simply follows the paper \citetitle{raptorjoin} by \citet{raptorjoin}. Furthermore, it utilizes functionality from \citet{Beast-impl} to read data and compute intersections.
 
 
 \subsection{Metrics}
@@ -159,7 +159,7 @@ The time it takes for the join itself to complete. This includes time for filter
 
 \subsection{Setup}
 
-The benchmarks are executed on a virtual machine with four cores and 16 GB of RAM. The java runtime is version 16 and it is configured to use 14 GB for all the real world datasets. To get more stable experiment results, all the first measures (cold starts) are excluded from the results. The first measures are often unstable and makes it harder to arrive at conclusions.
+The benchmarks are executed on a virtual machine with four cores and 16 GB of RAM. The java runtime is version 16 and it is configured to use 14 GB for all the real-world datasets. To get more stable experiment results, all the first measures (cold starts) are excluded from the results. The first measures are often unstable and makes it harder to arrive at conclusions.
 
 
 \subsection{Configuration}
