@@ -191,7 +191,7 @@ This section covers results for all the real-world datasets for both \ravenjoin 
     \label{tab:vector-load-times}
 \end{table}
 
-Table \ref{tab:vector-load-times} shows The time spent loading and building the outer \rtree for the 3 different vector datasets. As expected, both loading and \rtree building takes longer for the larger datasets. \todo[inline]{This is not correct, figure out why....}
+Table \ref{tab:vector-load-times} shows The time spent loading and building the outer \rtree for the 3 different vector datasets. As expected, the \rtree building takes longer for the larger datasets. The loading time does not follow this pattern, as \textit{Protected Areas} takes longer to read than \textit{Small Woody Features (vector)} even though it is smaller. The problem is with \textit{Protected Areas}, as the read speed is roughly the same for \textit{Boundaries} and \textit{Small Woody Features (vector)},  but around 10 times slower for \textit{Protected Areas}. We do not know what the reason for this is, but we suspect it is caused by the library we use for reading.
 
 \begin{figure}[H]
 \centering

@@ -17,7 +17,7 @@ To map the raster data to the face of the earth, metadata is added with transfor
 
 At a basic level, the vector data model is defined as points of X and Y coordinate pairs \cite{GIS-Essentials}. Each point represent a location on the earth and therefore a vector dataset can easily cover the whole earth with a few points. This makes the typical file size of vector model much smaller, compared to the raster model. On the other hand, vector data is not good to describe continuous data. 
 
-Connecting the points will form lines, which again can be connected to form polygons that are enclosed shapes (See figure \ref{fig:vector-model}. On the basis of polygons always being closed, we can say that a horizontal line, crossing through the polygon, must intersect an even number of times. This is useful for rasterisation of the vector data.
+Connecting the points will form lines, which again can be connected to form polygons that are enclosed shapes or geometries (See figure \ref{fig:vector-model}. On the basis of polygons always being closed, we can say that a horizontal line, crossing through the polygon, must intersect an even number of times. This is useful for rasterisation of the vector data.
 
 \begin{figure}[H]
     \centering
@@ -30,19 +30,18 @@ Connecting the points will form lines, which again can be connected to form poly
 
 A spatial join can be defined to be a join based on the location of data points of spatial data. More specifically the data is joined by the distance or physical intersection. For raster and vector data, a given polygon is joined with the pixels, that are inside the polygon. There are of course some definitions to be aware of, regarding when to say something is inside. For example, if a pixel is completely within the polygon or if it is just the center point of the pixel.
 
-To join raster and vector data, it is important that the projections of the datasets to get the same coordinate system. The projection information attached to the data is known as Coordinate Reference System (\textit{CRS}) and datasets can be using many different systems. This is why it would be very inefficient to convert the whole dataset to either vector or raster. The converted dataset would be inflated in size and would require reprojection for each new dataset. Since it is cumbersome to reproject raster data, we instead want to convert the vector data to the coordinate system of the raster data. This is much cheaper since vector does not have as many points as raster. This comes with the assumption that the edges of the vector data are not very different between the two projections.
+To join raster and vector data, it is important that the projections of the datasets are the same. The projection information attached to the data, is known as Coordinate Reference System (\textit{CRS}). Since the datasets often are projected differently, it would be inefficient to convert raster to vector or vice versa. The converted dataset would be inflated in size and would require reprojection for each new dataset if the CRS does not match. Raster data is not easily reprojected because each pixel would need to be converted to four points. Instead we want to convert the vector data to the coordinate system of the raster data. This is much cheaper since vector does not have as many points as raster and each point already has a designated location. This comes with the assumption that the lines of the vector data are not very different between the two projections.
 
 %new
-The output of the join is all the pixels that are within the geometries. Each geometry will have a list of belonging joined pixels and if two geometries cover the same area, the lists will simply be the same.
+The output of the join, is all the pixels that are within the geometries. Each geometry will have a list of belonging joined pixels, and if two geometries cover the same area, the lists will simply be the same.
 %new
 
 \subsection{State-of-the-art Systems \& Algorithms}
 
 \subsubsection{\beast}
-\beast is a state-of-the-art system that can join raster and vector data on a distributed level. It utilizes the \raptorjoin algorithm to do this. \beast contains the implementation of \raptorjoin that we are going to compare our method to.
+\beast is a state-of-the-art system, that can join raster and vector data on a distributed level and it utilizes the \raptorjoin algorithm to do this. We are going to compare of our method, with this implementation of \raptorjoin.
 
-\raptorjoin is designed to do distributed raster and vector joins. The algorithm splits images into smaller sections(tiles), that can be distributed across spark nodes. For each tile, intersections between line segments of the polygons and raster data rows are found, to create pixel ranges. These ranges can then be used as scan lines to read the exact pixels that are needed for the join. The join only uses the metadata to create the pixel ranges which means the raster data is not read before it is strictly necessary. Pixel ranges consists of (r, x1, x2),
-where r is the row of the pixel range and x1 and x2 are the start and endpoints. Once pixel ranges have been found, they are sorted, such that when reading values from the raster files, they are accessed in the same order they have in memory.
+\raptorjoin is designed to do distributed raster and vector joins. The algorithm splits images into smaller sections(tiles), that can be distributed across spark nodes. For each tile, intersections between line segments of the polygons and raster data rows are found, to create pixel ranges. These ranges can then be used as scan lines, to read the exact pixels that are needed for the join. The join only uses the metadata to create the pixel ranges, which means the raster data is not read before it is strictly necessary. Pixel ranges consists of (r, x1, x2), where r is the row of the pixel range, and x1 and x2 are the start and end points. Once pixel ranges have been found, they are sorted, such that reading values from the raster files, are accessed in the in same order, as in memory.
 
-The final step of \raptorjoin is to read the data and create results. The results consists of tuples (gid, rid, x, y, m) where gid is the id of the geometry. Rid the id of the raster tile. (x, y) The position within the raster image with id rid and m the which holds the value of the pixel.
+The final step of \raptorjoin is to read the data and create results. The results consists of tuples (gid, rid, x, y, m) where gid is the id of the geometry. rid is the id of the raster tile. (x, y) is the position within the raster image and m, which holds the value of the pixel.
 
