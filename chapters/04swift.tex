@@ -3,7 +3,7 @@
 Swift is a component of our system that functions as a tool, capable of generating synthetic vector and raster data. In this short section it is explained what the tool can generate and why it is useful for analysing raster vector joins.
 
 \subsection{Raster}
-Swift can generate either Perlin or Voronoi noise. If Perlin noise is selected, Swift supports generating images with 2 colours where the amount of each colour can be decided by the user. If Voronoi noise is selected, the user can specify the number of regions that should be generated.
+Swift can generate either Perlin or Voronoi noise. If Perlin noise is selected, Swift allows the user to select a percentage of pixels that have a certain colour. A filter can then be used to select only those pixels, allowing the user to decide the selectivity. If Voronoi noise is selected, the user can specify the number of regions that should be generated.
 Swift generates image files with a separate TFW file. The user can specify an area the raster data should cover, this is given as a rectangle using latitude/longitude coordinates.
 
 Perlin noise is often used to simulate terrains which is desirable in the context of geographical raster data. Therefore it is appropriate for the synthetic data. The generated data is gradual in the sense that similar values are next to each other. Additionally the Perlin noise gets divided with the number of values wanted which reduces the noise to steps. This gives a degree of control of how noisy the image becomes at a pixel level.

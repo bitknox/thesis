@@ -13,6 +13,7 @@ To map the raster data to the face of the earth, metadata is added with transfor
     \label{fig:raster-model}
 \end{figure}
 
+\newpage
 
 \subsection{Vector Data}
 The other of the two types of data used as input is vector data.
@@ -29,7 +30,7 @@ Connecting the points will form lines, which again can be connected to form poly
 
 \subsection{Spatial Joins}
 
-A spatial join can be defined to be a join based on the location of data points of spatial data. More specifically the data is joined by the distance or physical intersection. For raster and vector data, a given polygon is joined with the pixels, that are inside the polygon. Whether a pixel overlaps with a given polygon can be up to interpretation. For example, an overlap could mean that a pixel is completely within the polygon or that just the center point of the pixel is contained.
+A spatial join is the process of matching geographical features based on their spatial relationships. More specifically the data is usually joined by distance or physical intersection. For raster and vector data, a given polygon is joined with the pixels, that are inside the polygon. Whether a pixel overlaps with a given polygon can be up to interpretation. For example, an overlap could mean that a pixel is completely within the polygon or that just the center point of the pixel is contained.
 
 To join raster and vector data, it is important that the projections of the datasets are the same. The projection information attached to the data, is known as Coordinate Reference System (\textit{CRS}). The datasets are often projected differently and it would be inefficient to convert raster to vector or vice versa. The converted dataset would be inflated in size and would require reprojection for each new dataset if the CRS does not match. Raster data is not easily reprojected because each pixel is converted to a point which takes up more space. This reprojection is not feasible for large datasets \cite{singla2020raptor}. Instead we want to convert the vector data to the coordinate system of the raster data. This is much cheaper since vector does not have as many points as raster and each point already has a designated location. This comes with the assumption that the lines of the vector data are not significantly different between the two projections.
 

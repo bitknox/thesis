@@ -11,7 +11,7 @@ This thesis builds on top of our research project \cite{ResearchProj}, where we 
 
 \newpage
 \subsection{System Overview}
-The system consists of four major components
+The system consists of four major components:
 \paragraph{\raven} is the main component of our system. It consists of the \ravenjoin algorithm (see section \ref{sec:raven-join}, as well as a tool for visualizing the results of a join (see section \ref{sec:visualiser}). This thesis will cover the \raven component in detail.
 \paragraph{Raptor} is our implementation of the \raptorjoin algorithm running outside of Spark for better performance on our setup. It is based on the implementation by \href{https://bitbucket.org/bdlabucr/beast/src/master/}{\beast}. (see section \ref{sec:raptor-join})
 \paragraph{Eagle} is a tool that allows users to easily run benchmarks of spatial joins, and automatically plot the results (see section \ref{sec:eagle}).

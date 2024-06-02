@@ -8,7 +8,7 @@ This section describes the different components of \raven. We first describe the
 \paragraph{\kraster} 
 In order to efficiently filter values, \ravenjoin needs to be able to quickly retrieve information about all values present in some sub-matrix of the raster data. This is because it is able to disregard large parts of the raster data, if none of the values it contains, are matched by the filter.
 
-The \kraster data structure is a tree where every node corresponds to a section of the raster data. Nodes store the minimum and maximum value present in that section. The root node of the tree covers the entire image. Each node has $k^2$ children covering equally-sized portions of the image from their parent. $k$ is a constant parameter chosen before building the data structure, and it dictates the depth of the tree and the time to build and query it. A \kraster tree can be queried for the minimum and maximum raster value stored in some portion of the image has. This can be done directly as long as that portion has a corresponding node in the tree. If it does not, it is possible to combine queries of multiple nodes to cover the desired area. The \kraster data structure also has the advantage that it compresses the raster data considerably. An example of how raster can be converted to a tree storing nodes with value ranges can be seen in figure \ref{fig:k2raster-structure}.
+The \kraster data structure is a tree where every node corresponds to a section of the raster data. Nodes store the minimum and maximum value present in that section. The root node of the tree covers the entire image. Each node has $k^2$ children covering equally-sized portions of the image from their parent. $k$ is a constant parameter chosen before building the data structure, and it dictates the depth of the tree and the time to build and query it. A \kraster tree can be queried for the minimum and maximum raster value stored in some portion of the image. This can be done directly as long as that portion has a corresponding node in the tree. If it does not, it is possible to combine queries of multiple nodes to cover the desired area. The \kraster data structure also has the advantage that it compresses the raster data considerably. An example of how raster can be converted to a tree storing nodes with value ranges can be seen in figure \ref{fig:k2raster-structure}.
 
 To further reduce the size of the \kraster, instead of storing the ranges directly, they are stored as differences between the node in question and its parent. Specifically, each node will still store two numbers. One denoting how much larger the minimum value of its part of the data is compared to that of its parent. The other denoting how much smaller the maximum value is. In itself, this does not help much as it still needs to store 2 numbers. The improvement is caused by the fact that these values are further compressed using the DAC encoding \cite{DAC}. DAC compresses small values significantly better than large values. Storing differences instead of the ranges themselves, help reduce the size of each number, and therefore allows the DAC encoding to compress the data more.
 
@@ -19,7 +19,7 @@ To further reduce the size of the \kraster, instead of storing the ranges direct
     \label{fig:k2raster-structure}
 \end{figure}
 
-\paragraph{\rtree} To query the vector data efficiently in a given area, a spatial index is used. One of the most common indices, is an \rtree \cite{rtree}. The data structure groups spatial data in close proximity, given their Minimum Bounding Rectangle (\textit{MBR}). Region search queries traverse the overlapping nodes in the tree, which quickly excludes the entries, that does not overlap, from the search.
+\paragraph{\rtree} To query the vector data efficiently in a given area, a spatial index is used. One of the most common indices, is an \rstar \cite{rtree}. The data structure groups spatial data in close proximity, given their Minimum Bounding Rectangle (\textit{MBR}). Region search queries traverse the overlapping nodes in the tree, which quickly excludes the entries, that does not overlap, from the search.
 
 The \rstar \cite{rstartree} variant improves the search time of the tree, by minimizing the overlaps of the nodes, at the cost of longer build time. The vector data is loaded in as polygons, that get inserted into the \rstar, one by one. It is also possible to bulk load the vector data, with Sort Tile Recursive \cite{str} (\textit{STR}) and Overlap Minimizing Top-down bulk loading \cite{omt} (\textit{OMT}), which is beneficial for large vector datasets. We are going use a library that is able to do STR bulk loading and create the \rstar variant. Ideally, we would do STR loading with \rstar nodes, but this was not available with the library we used.
 
@@ -55,9 +55,9 @@ As mentioned, \ravenjoin is based on the algorithm described in \citetitle{k2ras
 \subsubsection{Overview}
 \ravenjoin is a raster-vector spatial join algorithm. It has support for filtering based on raster values faster than conventional join algorithms that first generate all results and then filter them. A join is created for each combination of raster and vector file. The initial step of \ravenjoin is to build the required data structures. The first data structure we build is an STR bulk-loaded \rtree. We use this tree to determine what vector data overlaps with a given tile of raster data. To make this work, we have to convert the rectangle describing the area of the given raster tile from the raster data CRS to that of the vector data. The vector data that lies within the bounds will be copied and then projected to the raster data's CRS. Raster bounds that has no intersecting vector data can be skipped. This means the raster data only gets indexed as it is needed for a join. The indices that get created will get written to disk such that the consecutive joins of the same area, will use the stored indices instead. 
 
-Next, an \rtree is created for every tile, containing the vector data that overlaps with it. Each tile of raster data is converted to a \kraster tree and it is passed to the join algorithm along with its corresponding \rtree.
+Next, an \rstar is created for every tile, containing the vector data that overlaps with it. Each tile of raster data is converted to a \kraster tree and it is passed to the join algorithm along with its corresponding \rstar.
 
-The join algorithm itself processes all nodes in the \rtree following a depth first traversal. When processing a node, the algorithm does a simple fast check, where it finds the smallest \kraster node that fully contains the \rtree node. It can then examine the minimum and maximum values within that \kraster node. If no values within that range match the filter it can simply ignore the \rtree node. If all values within the range match the filter, it can find the pixels that overlap with the geometries and add all these to a result list.
+The join algorithm itself processes all nodes in the \rstar following a depth first traversal. When processing a node, the algorithm does a simple fast check, where it finds the smallest \kraster node that fully contains the \rstar node. It can then examine the minimum and maximum values within that \kraster node. If no values within that range match the filter it can simply ignore the \rstar node. If all values within the range match the filter, it can find the pixels that overlap with the geometries and add all these to a result list.
 
 If some values of the range match the filter and some do not, the algorithm has to perform a slower, but similar check, on the MBR of the node, instead. If either all or no values within the MBR fall within the filter, it will do the same thing as with the node check. This time, if only some values in the range match the filter, it will use a method named \textit{search values in ranges} to find only the pixels that do match the filter.
 
@@ -89,12 +89,13 @@ In \citetitle{k2rasterjoin} by \citet{k2rasterjoin}, which is the paper our syst
 
 Applying a special filter that applies a separate filter for each sample is also possible using a filter function. This can save time over the more naive approach of filtering based on a range that encompasses all the wanted values and then manually filtering the results afterwards. The reason it is faster is not because it saves time on lookups in the \kraster tree, but rather that it produces fewer results initially, and avoids the final iteration over the results for further filtering.
 
+\newpage
 \subsubsection{Quadrant Checking}
-This is the fast initial check the join algorithm performs for nodes of interest, in the \rtree. It works by starting at a given node of the \kraster tree to find the child node, that contains the given geometry. It recursively calls itself with the currently found node. If none of the children contain the geometry, the current node is the smallest that fits. Once the smallest \kraster node containing the given geometry has been found, its minimum and maximum values can be given to the filter. The filter can then determine if the node in question should be examined further. 
+This is the fast initial check the join algorithm performs for nodes of interest, in the \rstar. It works by starting at a given node of the \kraster tree to find the child node, that contains the given geometry. It recursively calls itself with the currently found node. If none of the children contain the geometry, the current node is the smallest that fits. Once the smallest \kraster node containing the given geometry has been found, its minimum and maximum values can be given to the filter. The filter can then determine if the node in question should be examined further. 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{images/03method/checkQuadrant.png}
+    \includegraphics[width=0.4\textwidth]{images/03method/checkQuadrant.png}
     \caption{Example showing how checkQuadrant would evaluate the red Polygon. Since there is no full overlap for any of the inner \kraster nodes. The top left outer \kraster node would be returned.}
     \label{fig:check-quadrant}
 \end{figure}
@@ -104,7 +105,7 @@ This is a slower version of the previous method. The goal of this method is to f
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{images/03method/checkMBR.png}
+    \includegraphics[width=0.8\textwidth]{images/03method/checkMBR.png}
     \caption{Example showing which \kraster nodes would be examined to determine the minimum and maximum values. The method would examine the values of the blue nodes(e.g. nodes that are contained within the MBR of the polygon)}
     \label{fig:check-mbr}
 \end{figure}
@@ -348,7 +349,7 @@ This approach also allows \raven to use almost no memory other than what is need
 \subsubsection{Caching}
 The approach of creating fixed-sized partitions of the raster data, allows the data structures to be cached in a replacing fashion, in the sense that the cache can be created partially as needed. The logical coverage of each cache, makes it easy to manage the reusability of the cache. If the data structures were created from the least required raster data for one join, it could require more work to create the uncached data structures.
 
-We only cache the \kraster while the \rtree gets rebuild, given the vector data. The reason being, the use case of the system, is that the raster data is used with many different vector datasets, and therefore the vector data is not the same between each join. However, it could be an option to cache these structures too for the purpose of doing different filters.
+We only cache the \kraster while the \rstar gets rebuild, given the vector data. The reason being, the use case of the system, is that the raster data is used with many different vector datasets, and therefore the vector data is not the same between each join. However, it could be an option to cache these structures too for the purpose of doing different filters.
 
 \subsection{Visualizer} \label{sec:visualiser}
 
@@ -356,7 +357,7 @@ The \raven system contains a visualizer which is helpful for checking correctnes
 \begin{itemize}
     \item Drawing the result created by the \ravenjoin algorithm. In addition to the two other colour types, this can be also done using the original colour scheme from the raster file.
     \item Drawing the nodes of the \kraster tree.
-    \item Drawing the MBR of the nodes of the \rtree.
+    \item Drawing the MBR of the nodes of the \rstar.
     \item It can also draw the vector data on top of any of the previous.
 \end{itemize}
 
